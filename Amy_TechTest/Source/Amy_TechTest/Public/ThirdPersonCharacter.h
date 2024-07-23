@@ -18,6 +18,8 @@ protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+    virtual void Landed(const FHitResult& Hit) override;
+
 public:
     virtual void Tick(float DeltaTime) override;
 
@@ -27,6 +29,9 @@ public:
     // Movement functions
     void MoveForward(float Value);
     void MoveRight(float Value);
+
+    virtual void Jump() override;
+    virtual void StopJumping() override;
 
 private:
     void UpdateCharacterRotation();
@@ -40,6 +45,15 @@ private:
     // Input tracking variables
     float ForwardValue;
     float RightValue;
+
+    int JumpCounter;
+    bool bCanDoubleJump;
+    float DashStrength;
+
+    // Movement parameters for a "slippery" feel
+    float GroundFriction;
+    float BrakingDecelerationWalking;
+    float Acceleration;
 
     AParcel* HeldParcel;
 };

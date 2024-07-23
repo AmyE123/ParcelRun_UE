@@ -20,10 +20,21 @@ AThirdPersonCharacter::AThirdPersonCharacter()
     bUseControllerRotationRoll = false;
 
     // Configure character movement
-    GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...
-    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
+    GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // Rotation rate
     GetCharacterMovement()->JumpZVelocity = 600.f;
-    GetCharacterMovement()->AirControl = 0.2f;
+    GetCharacterMovement()->AirControl = 0.01f;
+
+    // Movement parameters for a "slippery" feel
+    GroundFriction = 2.0f; // Adjust this value for slipperiness
+    BrakingDecelerationWalking = 800.0f; // Adjust this for how quickly the character slows down
+    Acceleration = 2000.0f; // Adjust this for how quickly the character speeds up
+
+    GetCharacterMovement()->BrakingDecelerationWalking = BrakingDecelerationWalking;
+    GetCharacterMovement()->GroundFriction = GroundFriction;
+    GetCharacterMovement()->MaxWalkSpeed = 600.0f; // Default walking speed
+    GetCharacterMovement()->MaxWalkSpeedCrouched = 300.0f; // Crouched speed
+    GetCharacterMovement()->MaxAcceleration = Acceleration;
 
     // Create a camera boom (pulls in towards the player if there is a collision)
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -39,6 +50,11 @@ AThirdPersonCharacter::AThirdPersonCharacter()
     HeldParcel = nullptr;
     ForwardValue = 0.0f;
     RightValue = 0.0f;
+
+    // Initialize jump variables
+    JumpCounter = 0;
+    bCanDoubleJump = false;
+    DashStrength = 1000.f; // Adjust this value as needed
 }
 
 void AThirdPersonCharacter::BeginPlay()
@@ -52,6 +68,9 @@ void AThirdPersonCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
     PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AThirdPersonCharacter::Interact);
     PlayerInputComponent->BindAction("ThrowParcel", IE_Pressed, this, &AThirdPersonCharacter::ThrowParcel);
+
+    PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AThirdPersonCharacter::Jump);
+    PlayerInputComponent->BindAction("Jump", IE_Released, this, &AThirdPersonCharacter::StopJumping);
 
     // Bind movement events
     PlayerInputComponent->BindAxis("MoveForward", this, &AThirdPersonCharacter::MoveForward);
@@ -116,6 +135,40 @@ void AThirdPersonCharacter::UpdateCharacterRotation()
             SetActorRotation(NewRotation);
         }
     }
+}
+
+void AThirdPersonCharacter::Jump()
+{
+    if (GEngine)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Jump Pressed"));
+    }
+    UE_LOG(LogTemp, Warning, TEXT("Jump Pressed"));
+
+    if (JumpCounter < 1)
+    {
+        ACharacter::Jump();
+        JumpCounter++;
+    }
+    else if (bCanDoubleJump)
+    {
+        FVector LaunchVelocity = GetActorForwardVector() * DashStrength;
+        LaunchCharacter(LaunchVelocity, true, true);
+        bCanDoubleJump = false;
+        JumpCounter++;
+    }
+}
+
+void AThirdPersonCharacter::StopJumping()
+{
+    Super::StopJumping();
+}
+
+void AThirdPersonCharacter::Landed(const FHitResult& Hit)
+{
+    Super::Landed(Hit);
+    JumpCounter = 0;
+    bCanDoubleJump = true;
 }
 
 void AThirdPersonCharacter::Interact()
