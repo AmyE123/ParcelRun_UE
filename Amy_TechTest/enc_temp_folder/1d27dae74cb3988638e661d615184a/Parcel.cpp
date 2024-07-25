@@ -4,12 +4,6 @@
 AParcel::AParcel()
 {
     PrimaryActorTick.bCanEverTick = true;
-    bIsPickedUp = false;
-    bMoving = false;
-    MoveToLocation = FVector::ZeroVector;
-    MoveSpeed = 10.0f;
-    MoveStartTime = 0.0f;
-    MoveDuration = 1.0f;
 }
 
 void AParcel::BeginPlay()
@@ -52,7 +46,7 @@ void AParcel::PickUp(const AThirdPersonCharacter* Character)
     if (CharacterMesh != nullptr)
     {
         // Attach the parcel to the HandSocket
-        bool bAttached = AttachToComponent(CharacterMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("HandSocket"));
+        bool bAttached = AttachToComponent(CharacterMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("HandSocket"));
         if (bAttached)
         {
             UE_LOG(LogTemp, Log, TEXT("Parcel successfully attached to %s"), *CharacterMesh->GetName());
@@ -91,8 +85,12 @@ void AParcel::StartMoveToTarget(FVector TargetLocation)
 {
     MoveToLocation = TargetLocation;
     bMoving = true;
-    MoveSpeed = 1000.0f; // Set this speed to your preference for how fast it moves
     MoveStartTime = GetWorld()->GetTimeSeconds();
     MoveDuration = (TargetLocation - GetActorLocation()).Size() / MoveSpeed;
+
+    if(GetActorLocation() == TargetLocation)
+    { 
+        bDelivered = true;
+    }
 }
 

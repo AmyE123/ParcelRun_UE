@@ -20,38 +20,32 @@ AThirdPersonCharacter::AThirdPersonCharacter()
     // Set size for collision capsule
     GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
-    // Don't rotate when the controller rotates. Let that just affect the camera.
-    bUseControllerRotationPitch = false;
-    bUseControllerRotationYaw = false;
-    bUseControllerRotationRoll = false;
-
     // Configure character movement
-    GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input
-    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // Rotation rate
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
     GetCharacterMovement()->JumpZVelocity = 600.f;
     GetCharacterMovement()->AirControl = 0.01f;
 
-    // Movement parameters for a "slippery" feel
-    GroundFriction = 2.0f; // Adjust this value for slipperiness
-    BrakingDecelerationWalking = 800.0f; // Adjust this for how quickly the character slows down
-    Acceleration = 2000.0f; // Adjust this for how quickly the character speeds up
+    // Movement parameters for a "slippery" feel similar to parcel run
+    GroundFriction = 2.0f;
+    BrakingDecelerationWalking = 800.0f;
+    Acceleration = 2000.0f;
 
     GetCharacterMovement()->BrakingDecelerationWalking = BrakingDecelerationWalking;
     GetCharacterMovement()->GroundFriction = GroundFriction;
-    GetCharacterMovement()->MaxWalkSpeed = 600.0f; // Default walking speed
-    GetCharacterMovement()->MaxWalkSpeedCrouched = 300.0f; // Crouched speed
+    GetCharacterMovement()->MaxWalkSpeed = 600.0f;
     GetCharacterMovement()->MaxAcceleration = Acceleration;
 
     // Create a camera boom (pulls in towards the player if there is a collision)
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character
-    CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+    CameraBoom->TargetArmLength = 300.0f;
+    CameraBoom->bUsePawnControlRotation = true;
 
     // Create a follow camera
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-    FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+    FollowCamera->bUsePawnControlRotation = false;
 
     HeldParcel = nullptr;
     ForwardValue = 0.0f;
@@ -60,7 +54,7 @@ AThirdPersonCharacter::AThirdPersonCharacter()
     // Initialize jump variables
     JumpCounter = 0;
     bCanDoubleJump = false;
-    DashStrength = 1000.f; // Adjust this value as needed
+    DashStrength = 1000.f;
 }
 
 void AThirdPersonCharacter::BeginPlay()
@@ -190,10 +184,10 @@ void AThirdPersonCharacter::SelectRandomHouse()
         if (TargetHouse)
         {
             FVector Location = TargetHouse->GetActorLocation();
-            float Radius = 300.0f; // Adjust this value based on the scale of your houses
-            FColor Color = FColor::Emerald; // Change color based on your preference
-            float Duration = 5.0f; // How long to display the sphere, in seconds
-            float Thickness = 5.0f; // Line thickness
+            float Radius = 300.0f;
+            FColor Color = FColor::Emerald;
+            float Duration = 5.0f;
+            float Thickness = 5.0f;
 
             UE_LOG(LogTemp, Warning, TEXT("Selected House: %s at %s"), *TargetHouse->GetName(), *Location.ToString());
             DrawDebugSphere(GetWorld(), Location, Radius, 32, Color, true, Duration, 0, Thickness);
@@ -213,9 +207,29 @@ void AThirdPersonCharacter::SelectRandomHouse()
 
 bool AThirdPersonCharacter::IsAtTargetHouse()
 {
-    if (TargetHouse && FVector::Dist(GetActorLocation(), TargetHouse->GetActorLocation()) < 100.0f)  // 100 is an example proximity range
+    if (TargetHouse)
     {
-        return true;
+        FVector CharacterLocation = GetActorLocation();
+        FVector HouseLocation = TargetHouse->GetActorLocation();
+        float Distance = FVector::Dist(CharacterLocation, HouseLocation);
+
+        UE_LOG(LogTemp, Warning, TEXT("Character Location: %s"), *CharacterLocation.ToString());
+        UE_LOG(LogTemp, Warning, TEXT("Target House Location: %s"), *HouseLocation.ToString());
+        UE_LOG(LogTemp, Warning, TEXT("Distance to Target House: %f"), Distance);
+
+        if (Distance < 300.0f)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Character is at the target house."));
+            return true;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Character is NOT at the target house."));
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No target house set."));
     }
     return false;
 }
@@ -224,27 +238,40 @@ void AThirdPersonCharacter::DeliverParcel()
 {
     if (HeldParcel && TargetHouse)
     {
-        // Trigger some effect or notification of delivery
-        HeldParcel = nullptr;  // Clear the held parcel
-        TargetHouse = nullptr; // Clear the target house
-        // Possibly reward the player here
+        UE_LOG(LogTemp, Warning, TEXT("Delivering parcel to house: %s"), *TargetHouse->GetName());
+
+        HeldParcel = nullptr;
+        TargetHouse = nullptr;
+
+        UE_LOG(LogTemp, Warning, TEXT("Parcel delivered and target house cleared."));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No parcel to deliver or no target house."));
     }
 }
 
 void AThirdPersonCharacter::Interact()
 {
+    UE_LOG(LogTemp, Warning, TEXT("Interact pressed"));
+
     if (HeldParcel == nullptr)
     {
+        UE_LOG(LogTemp, Warning, TEXT("No parcel held, attempting to find nearest parcel"));
         HeldParcel = FindNearestParcel();
         if (HeldParcel)
         {
             HeldParcel->PickUp(this);
-            SelectRandomHouse();  // Function to select a random house
+            SelectRandomHouse();
         }
     }
-    else if (IsAtTargetHouse())  // Check if at target house
+    else
     {
-        DeliverParcel();  // Handle parcel delivery
+        UE_LOG(LogTemp, Warning, TEXT("Parcel held, checking if at target house"));
+        if (IsAtTargetHouse())
+        {
+            DeliverParcel();
+        }
     }
 }
 
@@ -300,23 +327,34 @@ void AThirdPersonCharacter::ThrowParcel()
     }
     UE_LOG(LogTemp, Warning, TEXT("ThrowParcel Pressed"));
 
-    if (HeldParcel && TargetHouse)  // Ensure both the parcel and the target house are valid
+    if (IsAtTargetHouse())
     {
-        FVector TargetLocation = TargetHouse->GetActorLocation();  // Use the house's location as the target
+        if (HeldParcel && TargetHouse)  // Ensure both the parcel and the target house are valid
+        {
+            FVector TargetLocation = TargetHouse->GetActorLocation();  // Use the house's location as the target
 
-        // Optionally, adjust the target location for accuracy or game mechanics, e.g., aiming at the doorstep or a specific part of the house
-        // TargetLocation += FVector(0, 0, -50); // Example adjustment if needed
-
-        UE_LOG(LogTemp, Log, TEXT("Throwing parcel towards house at location: %s"), *TargetLocation.ToString());
-        HeldParcel->Throw(TargetLocation, this);
-        HeldParcel = nullptr;  // Clear the held parcel after throwing
+            UE_LOG(LogTemp, Log, TEXT("Throwing parcel towards house at location: %s"), *TargetLocation.ToString());
+            HeldParcel->Throw(TargetLocation, this);
+            HeldParcel = nullptr;  // Clear the held parcel after throwing
+            DeliverParcel();
+        }
+        else if (!TargetHouse)
+        {
+            UE_LOG(LogTemp, Error, TEXT("No target house selected to throw the parcel at."));
+            if (GEngine)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No target house selected to throw the parcel at."));
+            }
+        }        
     }
-    else if (!TargetHouse)
+    else
     {
-        UE_LOG(LogTemp, Error, TEXT("No target house selected to throw the parcel at."));
+        UE_LOG(LogTemp, Error, TEXT("Not at target house."));
         if (GEngine)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No target house selected to throw the parcel at."));
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Not at target house."));
         }
     }
+
+
 }

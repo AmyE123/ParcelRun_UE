@@ -27,6 +27,9 @@ private:
     bool bMoving;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel", meta = (AllowPrivateAccess = "true"))
+    bool bDelivered;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel", meta = (AllowPrivateAccess = "true"))
     FVector MoveToLocation;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel", meta = (AllowPrivateAccess = "true"))

@@ -4,12 +4,6 @@
 AParcel::AParcel()
 {
     PrimaryActorTick.bCanEverTick = true;
-    bIsPickedUp = false;
-    bMoving = false;
-    MoveToLocation = FVector::ZeroVector;
-    MoveSpeed = 10.0f;
-    MoveStartTime = 0.0f;
-    MoveDuration = 1.0f;
 }
 
 void AParcel::BeginPlay()
@@ -91,8 +85,8 @@ void AParcel::StartMoveToTarget(FVector TargetLocation)
 {
     MoveToLocation = TargetLocation;
     bMoving = true;
-    MoveSpeed = 1000.0f; // Set this speed to your preference for how fast it moves
     MoveStartTime = GetWorld()->GetTimeSeconds();
     MoveDuration = (TargetLocation - GetActorLocation()).Size() / MoveSpeed;
+    bDelivered = true;
 }
 
