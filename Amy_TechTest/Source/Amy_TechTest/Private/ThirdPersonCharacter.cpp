@@ -6,6 +6,12 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
+#include <Kismet/KismetSystemLibrary.h>
+#include "House.h"
+#include <Kismet/GameplayStatics.h>
+
+// Add a variable to hold the target house
+AHouse* TargetHouse = nullptr;
 
 AThirdPersonCharacter::AThirdPersonCharacter()
 {
@@ -171,23 +177,119 @@ void AThirdPersonCharacter::Landed(const FHitResult& Hit)
     bCanDoubleJump = true;
 }
 
-void AThirdPersonCharacter::Interact()
+void AThirdPersonCharacter::SelectRandomHouse()
 {
-    if (GEngine)
+    TArray<AActor*> FoundHouses;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHouse::StaticClass(), FoundHouses);
+    if (FoundHouses.Num() > 0)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Interact Pressed"));
-    }
-    UE_LOG(LogTemp, Warning, TEXT("Interact Pressed"));
+        int Index = FMath::RandRange(0, FoundHouses.Num() - 1);
+        TargetHouse = Cast<AHouse>(FoundHouses[Index]);
 
-    if (HeldParcel == nullptr)
-    {
-        // Implement logic to check for a parcel within reach and pick it up
-        // Example: HeldParcel = FoundParcel;
-        if (HeldParcel)
+        // Debug log
+        if (TargetHouse)
         {
-            HeldParcel->PickUp();
+            FVector Location = TargetHouse->GetActorLocation();
+            float Radius = 300.0f; // Adjust this value based on the scale of your houses
+            FColor Color = FColor::Emerald; // Change color based on your preference
+            float Duration = 5.0f; // How long to display the sphere, in seconds
+            float Thickness = 5.0f; // Line thickness
+
+            UE_LOG(LogTemp, Warning, TEXT("Selected House: %s at %s"), *TargetHouse->GetName(), *Location.ToString());
+            DrawDebugSphere(GetWorld(), Location, Radius, 32, Color, true, Duration, 0, Thickness);
+
+            UE_LOG(LogTemp, Warning, TEXT("Debug sphere should be visible at location: %s"), *Location.ToString());
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to cast selected target as House."));
         }
     }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No houses found to select from."));
+    }
+}
+
+bool AThirdPersonCharacter::IsAtTargetHouse()
+{
+    if (TargetHouse && FVector::Dist(GetActorLocation(), TargetHouse->GetActorLocation()) < 100.0f)  // 100 is an example proximity range
+    {
+        return true;
+    }
+    return false;
+}
+
+void AThirdPersonCharacter::DeliverParcel()
+{
+    if (HeldParcel && TargetHouse)
+    {
+        // Trigger some effect or notification of delivery
+        HeldParcel = nullptr;  // Clear the held parcel
+        TargetHouse = nullptr; // Clear the target house
+        // Possibly reward the player here
+    }
+}
+
+void AThirdPersonCharacter::Interact()
+{
+    if (HeldParcel == nullptr)
+    {
+        HeldParcel = FindNearestParcel();
+        if (HeldParcel)
+        {
+            HeldParcel->PickUp(this);
+            SelectRandomHouse();  // Function to select a random house
+        }
+    }
+    else if (IsAtTargetHouse())  // Check if at target house
+    {
+        DeliverParcel();  // Handle parcel delivery
+    }
+}
+
+AParcel* AThirdPersonCharacter::FindNearestParcel()
+{
+    TArray<AActor*> FoundActors;
+    float NearestDist = FLT_MAX;
+    AParcel* NearestParcel = nullptr;
+    FVector MyLocation = GetActorLocation();
+    float SearchRadius = 500.0f; // Define your search radius here
+
+    UWorld* World = GetWorld();
+    if (World)
+    {
+        TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
+        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
+        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
+
+        UKismetSystemLibrary::SphereOverlapActors(World, MyLocation, SearchRadius, ObjectTypes, AParcel::StaticClass(), TArray<AActor*>(), FoundActors);
+
+        // Draw a debug sphere at the player's location with the defined radius
+        DrawDebugSphere(World, MyLocation, SearchRadius, 32, FColor::Cyan, false, 10.0f, (uint8)'\000', 1.5f);
+
+        if (FoundActors.Num() == 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("No parcels found within range."));
+            if (GEngine)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No parcels found within range."));
+            }
+        }
+
+        for (AActor* Actor : FoundActors)
+        {
+            float Dist = (Actor->GetActorLocation() - MyLocation).Size();
+            if (Dist < NearestDist)
+            {
+                NearestParcel = Cast<AParcel>(Actor);
+                NearestDist = Dist;
+            }
+        }
+    }
+
+    return NearestParcel;
 }
 
 void AThirdPersonCharacter::ThrowParcel()
@@ -198,10 +300,23 @@ void AThirdPersonCharacter::ThrowParcel()
     }
     UE_LOG(LogTemp, Warning, TEXT("ThrowParcel Pressed"));
 
-    if (HeldParcel)
+    if (HeldParcel && TargetHouse)  // Ensure both the parcel and the target house are valid
     {
-        FVector TargetLocation = GetActorLocation() + GetActorForwardVector() * 500; // Replace with actual target logic
-        HeldParcel->Throw(TargetLocation);
-        HeldParcel = nullptr;
+        FVector TargetLocation = TargetHouse->GetActorLocation();  // Use the house's location as the target
+
+        // Optionally, adjust the target location for accuracy or game mechanics, e.g., aiming at the doorstep or a specific part of the house
+        // TargetLocation += FVector(0, 0, -50); // Example adjustment if needed
+
+        UE_LOG(LogTemp, Log, TEXT("Throwing parcel towards house at location: %s"), *TargetLocation.ToString());
+        HeldParcel->Throw(TargetLocation, this);
+        HeldParcel = nullptr;  // Clear the held parcel after throwing
+    }
+    else if (!TargetHouse)
+    {
+        UE_LOG(LogTemp, Error, TEXT("No target house selected to throw the parcel at."));
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No target house selected to throw the parcel at."));
+        }
     }
 }

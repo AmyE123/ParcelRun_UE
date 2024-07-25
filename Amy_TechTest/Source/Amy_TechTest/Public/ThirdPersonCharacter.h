@@ -14,16 +14,26 @@ class AMY_TECHTEST_API AThirdPersonCharacter : public ACharacter
 public:
     AThirdPersonCharacter();
 
+    // Getter for ThrowStrength
+    float GetThrowStrength() const { return ThrowStrength; }
+
 protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
     virtual void Landed(const FHitResult& Hit) override;
 
+    void SelectRandomHouse();
+
+    bool IsAtTargetHouse();
+
+    void DeliverParcel();
+
 public:
     virtual void Tick(float DeltaTime) override;
 
     void Interact();
+    AParcel* FindNearestParcel();
     void ThrowParcel();
 
     // Movement functions
@@ -49,6 +59,9 @@ private:
     int JumpCounter;
     bool bCanDoubleJump;
     float DashStrength;
+
+    // Private variable for throw strength
+    float ThrowStrength = 100000;
 
     // Movement parameters for a "slippery" feel
     float GroundFriction;
