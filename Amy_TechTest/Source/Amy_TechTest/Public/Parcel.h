@@ -12,56 +12,68 @@ class AMY_TECHTEST_API AParcel : public AStaticMeshActor
 {
     GENERATED_BODY()
 
-        // Public Properties
+// Public Properties
 public:
 
-    // Protected Properties
+// Protected Properties
 protected:
 
-    // Private Properties
+// Private Properties
 private:
-    // Tracks whether the parcel had been picked up
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel", meta = (AllowPrivateAccess = "true"))
     bool bIsPickedUp;
 
-    // Indicates if the parcel is currently moving towards a target
-    bool Moving;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel", meta = (AllowPrivateAccess = "true"))
+    bool bMoving;
 
-    // The target location where the parcel should move to
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel", meta = (AllowPrivateAccess = "true"))
     FVector MoveToLocation;
 
-    // The speed at which the parcel moves towards the target
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel", meta = (AllowPrivateAccess = "true"))
     float MoveSpeed;
 
-    // The start time of the move
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel", meta = (AllowPrivateAccess = "true"))
     float MoveStartTime;
 
-    // The duration of the move from start to finish
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel", meta = (AllowPrivateAccess = "true"))
     float MoveDuration;
 
-    // Public Functions
+// Public Functions
 public:
-    // Parcel's constructor
+    /// <summary>
+    /// The parcel's constructor.
+    /// </summary>
     AParcel();
 
-    // Tick function override from AActor
+    /// <summary>
+    /// Tick function override from AActor.
+    /// </summary>
     virtual void Tick(float DeltaTime) override;
 
-    // Functionality for picking up parcels
+    /// <summary>
+    /// Functionality for picking up parcels.
+    /// </summary>
+    /// <param name="Character">The player character which will pick up the parcel.</param>
     void PickUp(const AThirdPersonCharacter* Character);
 
-    // Functionality for throwing parcels
+    /// <summary>
+    /// Functionality for throwing parcels.
+    /// </summary>
+    /// <param name="TargetLocation">The target location that the parcel needs to be thrown towards.</param>
+    /// <param name="Character">The player character which will throw the parcel.</param>
     void Throw(FVector TargetLocation, const AThirdPersonCharacter* Character);
 
-    // Starts the movement of the parcel towards a target location
+    /// <summary>
+    /// Starts the movement of the parcel towards a target location.
+    /// </summary>
+    /// <param name="TargetLocation">The target location that the parcel will move towards.</param>
     void StartMoveToTarget(FVector TargetLocation);
 
-    // Protected Functions    
+// Protected Functions    
 protected:
-
-    // Called when the game starts
     virtual void BeginPlay() override;
 
-    // Private Functions
+// Private Functions
 private:
 
 };

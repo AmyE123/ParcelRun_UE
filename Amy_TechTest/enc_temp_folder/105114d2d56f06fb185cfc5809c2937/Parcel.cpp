@@ -52,7 +52,7 @@ void AParcel::PickUp(const AThirdPersonCharacter* Character)
     if (CharacterMesh != nullptr)
     {
         // Attach the parcel to the HandSocket
-        bool bAttached = AttachToComponent(CharacterMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("HandSocket"));
+        bool bAttached = AttachToComponent(CharacterMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, TEXT("HandSocket"));
         if (bAttached)
         {
             UE_LOG(LogTemp, Log, TEXT("Parcel successfully attached to %s"), *CharacterMesh->GetName());
