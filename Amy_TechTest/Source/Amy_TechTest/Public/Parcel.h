@@ -11,18 +11,38 @@ class AMY_TECHTEST_API AParcel : public AStaticMeshActor
 {
     GENERATED_BODY()
 
+// Public Properties
 public:
+      
+// Protected Properties
+protected:
+    
+// Private Properties
+private: 
+    // Tracks whether the parcel had been picked up
+    bool bIsPickedUp;
+
+// Public Functions
+public:
+    // Parcel's constructor
     AParcel();
 
-protected:
-    virtual void BeginPlay() override;
-
-public:
+    // Tick function override from AActor
     virtual void Tick(float DeltaTime) override;
 
+    // Functionality for picking up parcels
     void PickUp();
+
+    // Functionality for throwing parcels
     void Throw(FVector TargetLocation);
 
-private:
-    bool bIsPickedUp;
+// Protected Functions    
+protected:
+    
+    // Called when the game starts
+    virtual void BeginPlay() override;
+
+// Private Functions
+private:  
+    
 };
