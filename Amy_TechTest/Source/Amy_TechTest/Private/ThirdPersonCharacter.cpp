@@ -1,17 +1,14 @@
 #include "ThirdPersonCharacter.h"
 #include "Parcel.h"
+#include "House.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
-#include <Kismet/KismetSystemLibrary.h>
-#include "House.h"
-#include <Kismet/GameplayStatics.h>
-
-// Add a variable to hold the target house
-AHouse* TargetHouse = nullptr;
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 AThirdPersonCharacter::AThirdPersonCharacter()
 {
@@ -55,11 +52,33 @@ AThirdPersonCharacter::AThirdPersonCharacter()
     JumpCounter = 0;
     bCanDoubleJump = false;
     DashStrength = 1000.f;
+
+    TargetHouse = nullptr;
+    PreviousTargetHouse = nullptr;
 }
 
 void AThirdPersonCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    // Temporary array to hold the actors
+    TArray<AActor*> FoundActors;
+
+    // Get all houses in the world
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHouse::StaticClass(), FoundActors);
+
+    // Clear the AllHouses array before adding new entries
+    AllHouses.Empty();
+
+    // Cast the actors to AHouse and add to AllHouses
+    for (AActor* Actor : FoundActors)
+    {
+        AHouse* House = Cast<AHouse>(Actor);
+        if (House)
+        {
+            AllHouses.Add(House);
+        }
+    }
 }
 
 void AThirdPersonCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -173,12 +192,16 @@ void AThirdPersonCharacter::Landed(const FHitResult& Hit)
 
 void AThirdPersonCharacter::SelectRandomHouse()
 {
-    TArray<AActor*> FoundHouses;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHouse::StaticClass(), FoundHouses);
-    if (FoundHouses.Num() > 0)
+    if (AllHouses.Num() > 0)
     {
-        int Index = FMath::RandRange(0, FoundHouses.Num() - 1);
-        TargetHouse = Cast<AHouse>(FoundHouses[Index]);
+        int Index;
+        do
+        {
+            Index = FMath::RandRange(0, AllHouses.Num() - 1);
+            TargetHouse = Cast<AHouse>(AllHouses[Index]);
+        } while (TargetHouse == PreviousTargetHouse && AllHouses.Num() > 1);
+
+        PreviousTargetHouse = TargetHouse;
 
         // Debug log
         if (TargetHouse)
@@ -186,8 +209,8 @@ void AThirdPersonCharacter::SelectRandomHouse()
             FVector Location = TargetHouse->GetActorLocation();
             float Radius = 300.0f;
             FColor Color = FColor::Emerald;
-            float Duration = 5.0f;
-            float Thickness = 5.0f;
+            float Duration = 0.5f;
+            float Thickness = 0.5f;
 
             UE_LOG(LogTemp, Warning, TEXT("Selected House: %s at %s"), *TargetHouse->GetName(), *Location.ToString());
             DrawDebugSphere(GetWorld(), Location, Radius, 32, Color, true, Duration, 0, Thickness);
@@ -239,6 +262,9 @@ void AThirdPersonCharacter::DeliverParcel()
     if (HeldParcel && TargetHouse)
     {
         UE_LOG(LogTemp, Warning, TEXT("Delivering parcel to house: %s"), *TargetHouse->GetName());
+
+        // Trigger the bounce animation
+        TargetHouse->PlayBounceAnimation();
 
         HeldParcel = nullptr;
         TargetHouse = nullptr;
@@ -339,8 +365,8 @@ void AThirdPersonCharacter::ThrowParcel()
 
             UE_LOG(LogTemp, Log, TEXT("Throwing parcel towards house at location: %s"), *TargetLocation.ToString());
             HeldParcel->Throw(TargetLocation, this);
-            HeldParcel = nullptr;  // Clear the held parcel after throwing
             DeliverParcel();
+            
         }
         else if (!TargetHouse)
         {
@@ -349,7 +375,7 @@ void AThirdPersonCharacter::ThrowParcel()
             {
                 GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No target house selected to throw the parcel at."));
             }
-        }        
+        }
     }
     else
     {
@@ -359,6 +385,4 @@ void AThirdPersonCharacter::ThrowParcel()
             GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Not at target house."));
         }
     }
-
-
 }

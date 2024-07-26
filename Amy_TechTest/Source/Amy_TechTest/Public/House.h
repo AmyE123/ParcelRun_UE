@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/TimelineComponent.h"
 #include "House.generated.h"
 
 UCLASS()
@@ -18,5 +19,23 @@ protected:
 public:
     virtual void Tick(float DeltaTime) override;
 
-    // Add more functions related to the house here
+    // Function to trigger the bounce animation
+    void PlayBounceAnimation();
+
+private:
+    // Timeline component to handle the bounce animation
+    UPROPERTY()
+        UTimelineComponent* BounceTimeline;
+
+    // Curve for the bounce animation
+    UPROPERTY(EditAnywhere, Category = "Animation")
+        UCurveFloat* BounceCurve;
+
+    // Callback function for timeline updates
+    UFUNCTION()
+        void HandleBounceProgress(float Value);
+
+    // Callback function for timeline finished
+    UFUNCTION()
+        void HandleBounceFinished();
 };

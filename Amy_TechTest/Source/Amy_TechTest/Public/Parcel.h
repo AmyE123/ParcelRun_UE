@@ -40,8 +40,15 @@ private:
     bool bIsPickedUp;
     bool bMoving;
     bool bDelivered;
+    bool bDestroyInitiated; // Flag to check if destroy process has started
     FVector MoveToLocation;
     float MoveSpeed;
     float MoveStartTime;
     float MoveDuration;
+
+    // Timer handle for delayed destruction
+    FTimerHandle DestroyTimerHandle;
+
+    // Function to handle delayed destruction
+    void DestroyParcel();
 };
