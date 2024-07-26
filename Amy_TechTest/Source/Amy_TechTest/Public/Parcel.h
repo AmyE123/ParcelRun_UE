@@ -13,42 +13,37 @@ class AMY_TECHTEST_API AParcel : public AStaticMeshActor
     GENERATED_BODY()
 
 public:
-    /// <summary>
-    /// Delegate to notify when the parcel is picked up.
-    /// </summary>
-    FParcelPickedUpDelegate OnParcelPickedUp;
-
-    // The parcel's constructor.
     AParcel();
 
-    // Tick function override from AActor.
+public:
     virtual void Tick(float DeltaTime) override;
-
-    // Functionality for picking up parcels.
-    void PickUp(const AThirdPersonCharacter* Character);
-
-    // Functionality for throwing parcels.
-    void Throw(FVector TargetLocation, const AThirdPersonCharacter* Character);
-
-    // Starts the movement of the parcel towards a target location.
-    void StartMoveToTarget(FVector TargetLocation);
 
 protected:
     virtual void BeginPlay() override;
 
+public:
+    // Public properties
+    FParcelPickedUpDelegate OnParcelPickedUp;
+
 private:
+    // Private properties
     bool bIsPickedUp;
     bool bMoving;
     bool bDelivered;
-    bool bDestroyInitiated; // Flag to check if destroy process has started
+    bool bDestroyInitiated;
     FVector MoveToLocation;
     float MoveSpeed;
     float MoveStartTime;
     float MoveDuration;
-
-    // Timer handle for delayed destruction
     FTimerHandle DestroyTimerHandle;
 
-    // Function to handle delayed destruction
+public:
+    // Public functions
+    void PickUp(const AThirdPersonCharacter* Character);
+    void Throw(FVector TargetLocation, const AThirdPersonCharacter* Character);
+    void StartMoveToTarget(FVector TargetLocation);
+
+private:
+    // Private functions
     void DestroyParcel();
 };

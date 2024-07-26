@@ -10,32 +10,31 @@ class AMY_TECHTEST_API AHouse : public AActor
 {
     GENERATED_BODY()
 
-public:
-    AHouse();
-
-protected:
-    virtual void BeginPlay() override;
-
-public:
-    virtual void Tick(float DeltaTime) override;
-
-    // Function to trigger the bounce animation
-    void PlayBounceAnimation();
-
 private:
-    // Timeline component to handle the bounce animation
+    // Private properties
     UPROPERTY()
         UTimelineComponent* BounceTimeline;
 
-    // Curve for the bounce animation
     UPROPERTY(EditAnywhere, Category = "Animation")
         UCurveFloat* BounceCurve;
 
-    // Callback function for timeline updates
+public:
+    // Public functions
+    AHouse();
+
+    virtual void Tick(float DeltaTime) override;
+
+    void PlayBounceAnimation();
+
+protected:
+    // Protected functions
+    virtual void BeginPlay() override;
+
+private:
+    // Private functions
     UFUNCTION()
         void HandleBounceProgress(float Value);
 
-    // Callback function for timeline finished
     UFUNCTION()
         void HandleBounceFinished();
 };

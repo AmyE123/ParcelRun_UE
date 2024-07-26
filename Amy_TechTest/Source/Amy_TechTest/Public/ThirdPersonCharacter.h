@@ -15,13 +15,15 @@ class AMY_TECHTEST_API AThirdPersonCharacter : public ACharacter
 public:
     AThirdPersonCharacter();
 
-protected:
-    virtual void BeginPlay() override;
-
 public:
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+protected:
+    virtual void BeginPlay() override;
+
+public:
+    // Public properties
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
         class USpringArmComponent* CameraBoom;
 
@@ -31,10 +33,28 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
         AParcel* HeldParcel;
 
+private:
+    // Private properties
+    float ForwardValue;
+    float RightValue;
+    int JumpCounter;
+    bool bCanDoubleJump;
+    float DashStrength;
+    float GroundFriction;
+    float BrakingDecelerationWalking;
+    float Acceleration;
+
+    AHouse* TargetHouse;
+    TArray<AHouse*> AllHouses;
+    AHouse* PreviousTargetHouse;
+
+public:
+    // Public functions
     void Interact();
     void ThrowParcel();
 
 private:
+    // Private functions
     void MoveForward(float Value);
     void MoveRight(float Value);
     void UpdateCharacterRotation();
@@ -46,21 +66,4 @@ private:
     bool IsAtTargetHouse();
     void DeliverParcel();
     AParcel* FindNearestParcel();
-
-    // Movement properties
-    float ForwardValue;
-    float RightValue;
-    int JumpCounter;
-    bool bCanDoubleJump;
-    float DashStrength;
-    float GroundFriction;
-    float BrakingDecelerationWalking;
-    float Acceleration;
-
-    // Target house for delivery
-    AHouse* TargetHouse;
-
-    // List of all houses and previous target house
-    TArray<AHouse*> AllHouses;
-    AHouse* PreviousTargetHouse;
 };
