@@ -5,6 +5,7 @@
 #include "ThirdPersonCharacter.generated.h"
 
 class AParcel;
+class AHouse;
 
 UCLASS()
 class AMY_TECHTEST_API AThirdPersonCharacter : public ACharacter
@@ -14,59 +15,52 @@ class AMY_TECHTEST_API AThirdPersonCharacter : public ACharacter
 public:
     AThirdPersonCharacter();
 
-    // Getter for ThrowStrength
-    float GetThrowStrength() const { return ThrowStrength; }
-
 protected:
     virtual void BeginPlay() override;
-    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-    virtual void Landed(const FHitResult& Hit) override;
-
-    void SelectRandomHouse();
-
-    bool IsAtTargetHouse();
-
-    void DeliverParcel();
 
 public:
     virtual void Tick(float DeltaTime) override;
+    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    void Interact();
-    AParcel* FindNearestParcel();
-    void ThrowParcel();
-
-    // Movement functions
-    void MoveForward(float Value);
-    void MoveRight(float Value);
-
-    virtual void Jump() override;
-    virtual void StopJumping() override;
-
-private:
-    void UpdateCharacterRotation();
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
         class USpringArmComponent* CameraBoom;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
         class UCameraComponent* FollowCamera;
 
-    // Input tracking variables
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+        AParcel* HeldParcel;
+
+    void Interact();
+    void ThrowParcel();
+
+private:
+    void MoveForward(float Value);
+    void MoveRight(float Value);
+    void UpdateCharacterRotation();
+    void Jump() override;
+    void StopJumping() override;
+    void Landed(const FHitResult& Hit) override;
+
+    void SelectRandomHouse();
+    bool IsAtTargetHouse();
+    void DeliverParcel();
+    AParcel* FindNearestParcel();
+
+    // Movement properties
     float ForwardValue;
     float RightValue;
-
     int JumpCounter;
     bool bCanDoubleJump;
     float DashStrength;
-
-    // Private variable for throw strength
-    float ThrowStrength = 100000;
-
-    // Movement parameters for a "slippery" feel
     float GroundFriction;
     float BrakingDecelerationWalking;
     float Acceleration;
 
-    AParcel* HeldParcel;
+    // Target house for delivery
+    AHouse* TargetHouse;
+
+    // List of all houses and previous target house
+    TArray<AHouse*> AllHouses;
+    AHouse* PreviousTargetHouse;
 };

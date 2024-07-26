@@ -272,6 +272,10 @@ void AThirdPersonCharacter::Interact()
         {
             DeliverParcel();
         }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Not at target house"));
+        }
     }
 }
 

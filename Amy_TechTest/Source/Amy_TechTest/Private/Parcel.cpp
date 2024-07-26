@@ -1,9 +1,16 @@
 #include "Parcel.h"
 #include "DrawDebugHelpers.h"
+#include "Components/SkeletalMeshComponent.h"
 
 AParcel::AParcel()
 {
     PrimaryActorTick.bCanEverTick = true;
+    bIsPickedUp = false;
+    bMoving = false;
+    bDelivered = false;
+    MoveSpeed = 300.0f;
+    MoveStartTime = 0.0f;
+    MoveDuration = 0.0f;
 }
 
 void AParcel::BeginPlay()
@@ -39,7 +46,7 @@ void AParcel::PickUp(const AThirdPersonCharacter* Character)
     }
 
     bIsPickedUp = true;
-    
+
     // Visually pick up the parcel (& become a child)
     USkeletalMeshComponent* CharacterMesh = const_cast<USkeletalMeshComponent*>(Character->GetMesh());
 
@@ -56,11 +63,13 @@ void AParcel::PickUp(const AThirdPersonCharacter* Character)
             UE_LOG(LogTemp, Error, TEXT("Failed to attach parcel to %s"), *CharacterMesh->GetName());
         }
     }
-
     else
     {
         UE_LOG(LogTemp, Error, TEXT("Character mesh component is null"));
-    }  
+    }
+
+    // Notify the postbox that the parcel has been picked up
+    OnParcelPickedUp.Broadcast();
 }
 
 void AParcel::Throw(FVector TargetLocation, const AThirdPersonCharacter* Character)
@@ -89,4 +98,3 @@ void AParcel::StartMoveToTarget(FVector TargetLocation)
     MoveDuration = (TargetLocation - GetActorLocation()).Size() / MoveSpeed;
     bDelivered = true;
 }
-
