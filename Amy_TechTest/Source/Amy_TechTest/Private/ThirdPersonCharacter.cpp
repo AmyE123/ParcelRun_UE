@@ -1,87 +1,103 @@
 #include "ThirdPersonCharacter.h"
 #include "Parcel.h"
-#include "GameFramework/PlayerController.h"
+#include "House.h"
+#include "DrawDebugHelpers.h"
+
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
+
+// Define static const variables
+const float AThirdPersonCharacter::DashStrength = 1000.f;
+const float AThirdPersonCharacter::GroundFriction = 2.0f;
+const float AThirdPersonCharacter::BrakingDecelerationWalking = 800.0f;
+const float AThirdPersonCharacter::Acceleration = 2000.0f;
 
 AThirdPersonCharacter::AThirdPersonCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
 
     // Set size for collision capsule
-    GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
-    // Don't rotate when the controller rotates. Let that just affect the camera.
-    bUseControllerRotationPitch = false;
-    bUseControllerRotationYaw = false;
-    bUseControllerRotationRoll = false;
+    GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
 
     // Configure character movement
-    GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input
-    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // Rotation rate
-    GetCharacterMovement()->JumpZVelocity = 600.f;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
+    GetCharacterMovement()->JumpZVelocity = 600.0f;
     GetCharacterMovement()->AirControl = 0.01f;
-
-    // Movement parameters for a "slippery" feel
-    GroundFriction = 2.0f; // Adjust this value for slipperiness
-    BrakingDecelerationWalking = 800.0f; // Adjust this for how quickly the character slows down
-    Acceleration = 2000.0f; // Adjust this for how quickly the character speeds up
 
     GetCharacterMovement()->BrakingDecelerationWalking = BrakingDecelerationWalking;
     GetCharacterMovement()->GroundFriction = GroundFriction;
-    GetCharacterMovement()->MaxWalkSpeed = 600.0f; // Default walking speed
-    GetCharacterMovement()->MaxWalkSpeedCrouched = 300.0f; // Crouched speed
+    GetCharacterMovement()->MaxWalkSpeed = 600.0f;
     GetCharacterMovement()->MaxAcceleration = Acceleration;
 
     // Create a camera boom (pulls in towards the player if there is a collision)
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->TargetArmLength = 300.0f; // The camera follows at this distance behind the character
-    CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+    CameraBoom->TargetArmLength = 300.0f;
+    CameraBoom->bUsePawnControlRotation = true;
 
     // Create a follow camera
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-    FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+    FollowCamera->bUsePawnControlRotation = false;
 
-    HeldParcel = nullptr;
+    // Initialize movement variables
     ForwardValue = 0.0f;
     RightValue = 0.0f;
 
     // Initialize jump variables
     JumpCounter = 0;
     bCanDoubleJump = false;
-    DashStrength = 1000.f; // Adjust this value as needed
+
+    // Initialize parcel variables
+    HeldParcel = nullptr;
+
+    // Initialize house variables
+    TargetHouse = nullptr;
+    PreviousTargetHouse = nullptr;
 }
 
 void AThirdPersonCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHouse::StaticClass(), FoundActors);
+
+
+    AllHouses.Empty();
+    for (AActor* Actor : FoundActors)
+    {
+        AHouse* House = Cast<AHouse>(Actor);
+        if (House)
+        {
+            AllHouses.Add(House);
+        }
+    }
 }
 
 void AThirdPersonCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-    PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AThirdPersonCharacter::Interact);
-    PlayerInputComponent->BindAction("ThrowParcel", IE_Pressed, this, &AThirdPersonCharacter::ThrowParcel);
-
+    // Player movement functionality binding
     PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AThirdPersonCharacter::Jump);
     PlayerInputComponent->BindAction("Jump", IE_Released, this, &AThirdPersonCharacter::StopJumping);
-
-    // Bind movement events
     PlayerInputComponent->BindAxis("MoveForward", this, &AThirdPersonCharacter::MoveForward);
     PlayerInputComponent->BindAxis("MoveRight", this, &AThirdPersonCharacter::MoveRight);
+
+    // Player input functionailty binding
+    PlayerInputComponent->BindAction("ThrowParcel", IE_Pressed, this, &AThirdPersonCharacter::ThrowParcel);
 }
 
 void AThirdPersonCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
-    // Update character rotation based on movement input
     UpdateCharacterRotation();
 }
 
@@ -90,12 +106,10 @@ void AThirdPersonCharacter::MoveForward(float Value)
     ForwardValue = Value;
     if ((Controller != nullptr) && (Value != 0.0f))
     {
-        // Find out which way is forward
-        const FRotator Rotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0, Rotation.Yaw, 0);
+        FRotator Rotation = Controller->GetControlRotation();
+        FRotator YawRotation(0, Rotation.Yaw, 0);
 
-        // Get forward vector
-        const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+        FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
         AddMovementInput(Direction, Value);
     }
 }
@@ -105,12 +119,10 @@ void AThirdPersonCharacter::MoveRight(float Value)
     RightValue = Value;
     if ((Controller != nullptr) && (Value != 0.0f))
     {
-        // Find out which way is right
-        const FRotator Rotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0, Rotation.Yaw, 0);
+        FRotator Rotation = Controller->GetControlRotation();
+        FRotator YawRotation(0, Rotation.Yaw, 0);
 
-        // Get right vector
-        const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+        FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
         AddMovementInput(Direction, Value);
     }
 }
@@ -119,19 +131,17 @@ void AThirdPersonCharacter::UpdateCharacterRotation()
 {
     if ((ForwardValue != 0.0f) || (RightValue != 0.0f))
     {
-        const FRotator Rotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0, Rotation.Yaw, 0);
+        FRotator Rotation = Controller->GetControlRotation();
+        FRotator YawRotation(0, Rotation.Yaw, 0);
 
-        // Combine movement direction
         FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X) * ForwardValue +
             FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y) * RightValue;
 
-        // Update character rotation to face the direction of movement
         if (!Direction.IsNearlyZero())
         {
             FRotator NewRotation = Direction.Rotation();
-            NewRotation.Pitch = 0; // Ensure the character doesn't pitch up/down
-            NewRotation.Roll = 0;  // Ensure the character doesn't roll
+            NewRotation.Pitch = 0;
+            NewRotation.Roll = 0;
             SetActorRotation(NewRotation);
         }
     }
@@ -139,12 +149,6 @@ void AThirdPersonCharacter::UpdateCharacterRotation()
 
 void AThirdPersonCharacter::Jump()
 {
-    if (GEngine)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Jump Pressed"));
-    }
-    UE_LOG(LogTemp, Warning, TEXT("Jump Pressed"));
-
     if (JumpCounter < 1)
     {
         ACharacter::Jump();
@@ -171,37 +175,78 @@ void AThirdPersonCharacter::Landed(const FHitResult& Hit)
     bCanDoubleJump = true;
 }
 
-void AThirdPersonCharacter::Interact()
+void AThirdPersonCharacter::SelectRandomHouse()
 {
-    if (GEngine)
+    if (AllHouses.Num() > 0)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Interact Pressed"));
-    }
-    UE_LOG(LogTemp, Warning, TEXT("Interact Pressed"));
-
-    if (HeldParcel == nullptr)
-    {
-        // Implement logic to check for a parcel within reach and pick it up
-        // Example: HeldParcel = FoundParcel;
-        if (HeldParcel)
+        int32 Index;
+        do
         {
-            HeldParcel->PickUp();
+            Index = FMath::RandRange(0, AllHouses.Num() - 1);
+            TargetHouse = Cast<AHouse>(AllHouses[Index]);
+        } while (TargetHouse == PreviousTargetHouse && AllHouses.Num() > 1);
+
+        PreviousTargetHouse = TargetHouse;
+
+        if (TargetHouse)
+        {
+            FVector Location = TargetHouse->GetActorLocation();
+            const float Radius = 300.0f;
+            const FColor Color = FColor::Emerald;
+            const float Duration = 0.5f;
+            const float Thickness = 0.5f;
+
+            DrawDebugSphere(GetWorld(), Location, Radius, 32, Color, true, Duration, 0, Thickness);
         }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("No houses found to select from."));
+    }
+}
+
+bool AThirdPersonCharacter::IsAtTargetHouse()
+{
+    if (TargetHouse)
+    {
+        FVector CharacterLocation = GetActorLocation();
+        FVector HouseLocation = TargetHouse->GetActorLocation();
+        float Distance = FVector::Dist(CharacterLocation, HouseLocation);
+
+        // Player is at the target house and close enough to deliver.
+        if (Distance < 300.0f)
+        {
+            return true;
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("No target house set."));
+    }
+    return false;
+}
+
+void AThirdPersonCharacter::DeliverParcel()
+{
+    if (HeldParcel && TargetHouse)
+    {
+        TargetHouse->PlayBounceAnimation();
+        HeldParcel = nullptr;
+        TargetHouse = nullptr;
+        UE_LOG(LogTemp, Warning, TEXT("Parcel delivered."));
     }
 }
 
 void AThirdPersonCharacter::ThrowParcel()
 {
-    if (GEngine)
+    if (IsAtTargetHouse())
     {
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ThrowParcel Pressed"));
-    }
-    UE_LOG(LogTemp, Warning, TEXT("ThrowParcel Pressed"));
-
-    if (HeldParcel)
-    {
-        FVector TargetLocation = GetActorLocation() + GetActorForwardVector() * 500; // Replace with actual target logic
-        HeldParcel->Throw(TargetLocation);
-        HeldParcel = nullptr;
+        if (HeldParcel && TargetHouse)
+        {
+            FVector TargetLocation = TargetHouse->GetActorLocation();
+            HeldParcel->Throw(TargetLocation, this);
+            HeldParcel->bIsPickedUp = false;
+            DeliverParcel();
+        }
     }
 }

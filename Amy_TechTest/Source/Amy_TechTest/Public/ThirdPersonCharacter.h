@@ -5,6 +5,7 @@
 #include "ThirdPersonCharacter.generated.h"
 
 class AParcel;
+class AHouse;
 
 UCLASS()
 class AMY_TECHTEST_API AThirdPersonCharacter : public ACharacter
@@ -12,48 +13,56 @@ class AMY_TECHTEST_API AThirdPersonCharacter : public ACharacter
     GENERATED_BODY()
 
 public:
-    AThirdPersonCharacter();
+    // Public properties
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+    class USpringArmComponent* CameraBoom;
 
-protected:
-    virtual void BeginPlay() override;
-    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+    class UCameraComponent* FollowCamera;
 
-    virtual void Landed(const FHitResult& Hit) override;
-
-public:
-    virtual void Tick(float DeltaTime) override;
-
-    void Interact();
-    void ThrowParcel();
-
-    // Movement functions
-    void MoveForward(float Value);
-    void MoveRight(float Value);
-
-    virtual void Jump() override;
-    virtual void StopJumping() override;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+    AParcel* HeldParcel;
 
 private:
-    void UpdateCharacterRotation();
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-        class USpringArmComponent* CameraBoom;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-        class UCameraComponent* FollowCamera;
-
-    // Input tracking variables
+    // Private properties
     float ForwardValue;
     float RightValue;
-
     int JumpCounter;
     bool bCanDoubleJump;
-    float DashStrength;
 
-    // Movement parameters for a "slippery" feel
-    float GroundFriction;
-    float BrakingDecelerationWalking;
-    float Acceleration;
+    // Constant parameters for character movement
+    static const float DashStrength;
+    static const float GroundFriction;
+    static const float BrakingDecelerationWalking;
+    static const float Acceleration;
 
-    AParcel* HeldParcel;
+    // House parameters
+    AHouse* TargetHouse;
+    TArray<AHouse*> AllHouses;
+    AHouse* PreviousTargetHouse;
+
+public:
+    // Public functions
+    AThirdPersonCharacter();
+
+    virtual void Tick(float DeltaTime) override;
+    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+    void ThrowParcel();
+    void SelectRandomHouse();
+
+protected:
+    // Protected functions
+    virtual void BeginPlay() override;
+
+private:
+    // Private functions
+    void MoveForward(float Value);
+    void MoveRight(float Value);
+    void UpdateCharacterRotation();
+    void Jump() override;
+    void StopJumping() override;
+    void Landed(const FHitResult& Hit) override;    
+    bool IsAtTargetHouse();
+    void DeliverParcel();
 };
