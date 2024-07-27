@@ -5,6 +5,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "ThirdPersonCharacter.h"
 
 // Initialize static constants
 const float AParcel::MoveSpeed = 300.0f;
@@ -83,6 +84,8 @@ void AParcel::PickUp(const AThirdPersonCharacter* Character)
 
     bIsPickedUp = true;
 
+    // Detach from any previous parent and attach to the character's hand socket
+    DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
     USkeletalMeshComponent* CharacterMesh = const_cast<USkeletalMeshComponent*>(Character->GetMesh());
     if (CharacterMesh != nullptr)
@@ -91,6 +94,11 @@ void AParcel::PickUp(const AThirdPersonCharacter* Character)
         if (!bAttached)
         {
             UE_LOG(LogTemp, Error, TEXT("Failed to attach parcel to %s"), *CharacterMesh->GetName());
+        }
+        else
+        {
+            // Keep the parcel at the origin relative to the hand socket
+            ParcelMesh->SetRelativeLocation(FVector::ZeroVector);
         }
     }
     else

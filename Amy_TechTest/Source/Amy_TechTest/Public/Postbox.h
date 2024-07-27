@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Parcel.h"
 #include "Postbox.generated.h"
 
 UCLASS()
@@ -10,30 +9,33 @@ class AMY_TECHTEST_API APostbox : public AActor
 {
     GENERATED_BODY()
 
-private:
-    // private properties
-    UPROPERTY(EditAnywhere, Category = "Parcel")
-    TSubclassOf<AParcel> ParcelClass;
-
-    UPROPERTY(EditAnywhere, Category = "Parcel")
-    float ParcelRespawnRate;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-    USceneComponent* ParcelSpawningPoint;
-
-    FTimerHandle SpawnTimerHandle;
-
 public:
-    // Public functions
+    // Sets default values for this actor's properties
     APostbox();
-    virtual void Tick(float DeltaTime) override;
 
 protected:
-    // Protected functions
+    // Called when the game starts or when spawned
     virtual void BeginPlay() override;
 
+public:
+    // Called every frame
+    virtual void Tick(float DeltaTime) override;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    class UStaticMeshComponent* PostboxMesh;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+    class USceneComponent* ParcelSpawningPoint;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel")
+    TSubclassOf<class AParcel> ParcelClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel")
+    float ParcelRespawnRate;
+
 private:
-    // Private functions
+    FTimerHandle SpawnTimerHandle;
+
     void SpawnParcel();
 
     UFUNCTION()

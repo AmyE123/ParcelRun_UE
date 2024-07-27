@@ -198,16 +198,16 @@ void AThirdPersonCharacter::SelectRandomHouse()
 
         PreviousTargetHouse = TargetHouse;
 
-        if (TargetHouse)
-        {
-            FVector Location = TargetHouse->GetActorLocation();
-            const float Radius = 300.0f;
-            const FColor Color = FColor::Emerald;
-            const float Duration = 0.5f;
-            const float Thickness = 0.5f;
+        //if (TargetHouse)
+        //{
+        //    FVector Location = TargetHouse->GetActorLocation();
+        //    const float Radius = 400.0f;
+        //    const FColor Color = FColor::Emerald;
+        //    const float Duration = 0.1f;
+        //    const float Thickness = 1.0f;
 
-            DrawDebugSphere(GetWorld(), Location, Radius, 32, Color, true, Duration, 0, Thickness);
-        }
+        //    DrawDebugSphere(GetWorld(), Location, Radius, 32, Color, true, Duration, 0, Thickness);
+        //}
     }
     else
     {

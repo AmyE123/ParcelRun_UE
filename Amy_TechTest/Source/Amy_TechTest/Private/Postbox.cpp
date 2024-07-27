@@ -1,6 +1,6 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Postbox.h"
+#include "Parcel.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 
@@ -9,9 +9,13 @@ APostbox::APostbox()
 {
     PrimaryActorTick.bCanEverTick = true;
 
+    // Initialize the StaticMesh component for the postbox
+    PostboxMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PostboxMesh"));
+    RootComponent = PostboxMesh;
+
     // Initialize the ParcelSpawningPoint
     ParcelSpawningPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ParcelSpawningPoint"));
-    RootComponent = ParcelSpawningPoint;
+    ParcelSpawningPoint->SetupAttachment(PostboxMesh);  // Attach it to the PostboxMesh
 }
 
 void APostbox::BeginPlay()
@@ -40,7 +44,8 @@ void APostbox::SpawnParcel()
 
         if (SpawnedParcel)
         {
-            SpawnedParcel->AttachToComponent(ParcelSpawningPoint, FAttachmentTransformRules::KeepWorldTransform);
+            // Attach to the ParcelSpawningPoint
+            SpawnedParcel->AttachToComponent(ParcelSpawningPoint, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
             SpawnedParcel->OnParcelPickedUp.AddDynamic(this, &APostbox::OnParcelPickedUp);
         }
     }
