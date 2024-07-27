@@ -11,12 +11,12 @@ class AMY_TECHTEST_API APostbox : public AActor
     GENERATED_BODY()
 
 private:
-    // Private properties
+    // private properties
     UPROPERTY(EditAnywhere, Category = "Parcel")
-        TSubclassOf<AParcel> ParcelClass;
+    TSubclassOf<AParcel> ParcelClass;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-        USceneComponent* ParcelSpawningPoint;
+    USceneComponent* ParcelSpawningPoint;
 
     FTimerHandle SpawnTimerHandle;
 
@@ -39,4 +39,6 @@ private:
 
     UFUNCTION()
         void OnParcelPickedUp();
+
+
 };

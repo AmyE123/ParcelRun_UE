@@ -39,10 +39,12 @@ private:
     float RightValue;
     int JumpCounter;
     bool bCanDoubleJump;
-    float DashStrength;
-    float GroundFriction;
-    float BrakingDecelerationWalking;
-    float Acceleration;
+
+    // Constant parameters for character movement
+    static const float DashStrength;
+    static const float GroundFriction;
+    static const float BrakingDecelerationWalking;
+    static const float Acceleration;
 
     AHouse* TargetHouse;
     TArray<AHouse*> AllHouses;
@@ -50,8 +52,8 @@ private:
 
 public:
     // Public functions
-    void Interact();
     void ThrowParcel();
+    void SelectRandomHouse();
 
 private:
     // Private functions
@@ -60,9 +62,7 @@ private:
     void UpdateCharacterRotation();
     void Jump() override;
     void StopJumping() override;
-    void Landed(const FHitResult& Hit) override;
-
-    void SelectRandomHouse();
+    void Landed(const FHitResult& Hit) override;    
     bool IsAtTargetHouse();
     void DeliverParcel();
     AParcel* FindNearestParcel();

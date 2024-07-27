@@ -9,7 +9,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FParcelPickedUpDelegate);
 
 UCLASS()
-class AMY_TECHTEST_API AParcel : public AActor
+class AMY_TECHTEST_API AParcel : public AStaticMeshActor
 {
     GENERATED_BODY()
 
@@ -27,20 +27,17 @@ public:
     FParcelPickedUpDelegate OnParcelPickedUp;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel")
-        bool bDelivered;
+    bool bDelivered;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel")
-        bool bIsPickedUp;
+    bool bIsPickedUp;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-        class UBoxComponent* CollisionComponent;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-        class UStaticMeshComponent* ParcelMesh;
+    class UBoxComponent* CollisionComponent;
 
 private:
     // Private properties 
-    bool bMoving;
+    bool bMoving; 
     bool bDestroyInitiated;
     FVector MoveToLocation;
     float MoveSpeed;
@@ -55,9 +52,9 @@ public:
     void StartMoveToTarget(FVector TargetLocation);
 
     UFUNCTION()
-        void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-            class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-            const FHitResult& SweepResult);
+    void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+                        class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                        const FHitResult& SweepResult);
 
 private:
     // Private functions

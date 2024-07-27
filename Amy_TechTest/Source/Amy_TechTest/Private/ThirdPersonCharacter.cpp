@@ -1,32 +1,34 @@
 #include "ThirdPersonCharacter.h"
 #include "Parcel.h"
 #include "House.h"
-#include "GameFramework/PlayerController.h"
+#include "DrawDebugHelpers.h"
+
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "DrawDebugHelpers.h"
+
+// Define static const variables
+const float AThirdPersonCharacter::DashStrength = 1000.f;
+const float AThirdPersonCharacter::GroundFriction = 2.0f;
+const float AThirdPersonCharacter::BrakingDecelerationWalking = 800.0f;
+const float AThirdPersonCharacter::Acceleration = 2000.0f;
 
 AThirdPersonCharacter::AThirdPersonCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
 
     // Set size for collision capsule
-    GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+    GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
 
     // Configure character movement
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
-    GetCharacterMovement()->JumpZVelocity = 600.f;
+    GetCharacterMovement()->JumpZVelocity = 600.0f;
     GetCharacterMovement()->AirControl = 0.01f;
-
-    // Movement parameters for a "slippery" feel similar to parcel run
-    GroundFriction = 2.0f;
-    BrakingDecelerationWalking = 800.0f;
-    Acceleration = 2000.0f;
 
     GetCharacterMovement()->BrakingDecelerationWalking = BrakingDecelerationWalking;
     GetCharacterMovement()->GroundFriction = GroundFriction;
@@ -44,15 +46,18 @@ AThirdPersonCharacter::AThirdPersonCharacter()
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
 
-    HeldParcel = nullptr;
+    // Initialize movement variables
     ForwardValue = 0.0f;
     RightValue = 0.0f;
 
     // Initialize jump variables
     JumpCounter = 0;
     bCanDoubleJump = false;
-    DashStrength = 1000.f;
 
+    // Initialize parcel variables
+    HeldParcel = nullptr;
+
+    // Initialize house variables
     TargetHouse = nullptr;
     PreviousTargetHouse = nullptr;
 }
@@ -61,16 +66,11 @@ void AThirdPersonCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Temporary array to hold the actors
     TArray<AActor*> FoundActors;
-
-    // Get all houses in the world
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHouse::StaticClass(), FoundActors);
 
-    // Clear the AllHouses array before adding new entries
-    AllHouses.Empty();
 
-    // Cast the actors to AHouse and add to AllHouses
+    AllHouses.Empty();
     for (AActor* Actor : FoundActors)
     {
         AHouse* House = Cast<AHouse>(Actor);
@@ -85,22 +85,19 @@ void AThirdPersonCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-    PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AThirdPersonCharacter::Interact);
-    PlayerInputComponent->BindAction("ThrowParcel", IE_Pressed, this, &AThirdPersonCharacter::ThrowParcel);
-
+    // Player movement functionality binding
     PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AThirdPersonCharacter::Jump);
     PlayerInputComponent->BindAction("Jump", IE_Released, this, &AThirdPersonCharacter::StopJumping);
-
-    // Bind movement events
     PlayerInputComponent->BindAxis("MoveForward", this, &AThirdPersonCharacter::MoveForward);
     PlayerInputComponent->BindAxis("MoveRight", this, &AThirdPersonCharacter::MoveRight);
+
+    // Player input functionailty binding
+    PlayerInputComponent->BindAction("ThrowParcel", IE_Pressed, this, &AThirdPersonCharacter::ThrowParcel);
 }
 
 void AThirdPersonCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
-    // Update character rotation based on movement input
     UpdateCharacterRotation();
 }
 
@@ -109,12 +106,10 @@ void AThirdPersonCharacter::MoveForward(float Value)
     ForwardValue = Value;
     if ((Controller != nullptr) && (Value != 0.0f))
     {
-        // Find out which way is forward
-        const FRotator Rotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0, Rotation.Yaw, 0);
+        FRotator Rotation = Controller->GetControlRotation();
+        FRotator YawRotation(0, Rotation.Yaw, 0);
 
-        // Get forward vector
-        const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+        FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
         AddMovementInput(Direction, Value);
     }
 }
@@ -124,12 +119,10 @@ void AThirdPersonCharacter::MoveRight(float Value)
     RightValue = Value;
     if ((Controller != nullptr) && (Value != 0.0f))
     {
-        // Find out which way is right
-        const FRotator Rotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0, Rotation.Yaw, 0);
+        FRotator Rotation = Controller->GetControlRotation();
+        FRotator YawRotation(0, Rotation.Yaw, 0);
 
-        // Get right vector
-        const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+        FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
         AddMovementInput(Direction, Value);
     }
 }
@@ -138,19 +131,17 @@ void AThirdPersonCharacter::UpdateCharacterRotation()
 {
     if ((ForwardValue != 0.0f) || (RightValue != 0.0f))
     {
-        const FRotator Rotation = Controller->GetControlRotation();
-        const FRotator YawRotation(0, Rotation.Yaw, 0);
+        FRotator Rotation = Controller->GetControlRotation();
+        FRotator YawRotation(0, Rotation.Yaw, 0);
 
-        // Combine movement direction
         FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X) * ForwardValue +
             FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y) * RightValue;
 
-        // Update character rotation to face the direction of movement
         if (!Direction.IsNearlyZero())
         {
             FRotator NewRotation = Direction.Rotation();
-            NewRotation.Pitch = 0; // Ensure the character doesn't pitch up/down
-            NewRotation.Roll = 0;  // Ensure the character doesn't roll
+            NewRotation.Pitch = 0;
+            NewRotation.Roll = 0;
             SetActorRotation(NewRotation);
         }
     }
@@ -160,7 +151,7 @@ void AThirdPersonCharacter::Jump()
 {
     if (GEngine)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Jump Pressed"));
+        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Jump Pressed"));
     }
     UE_LOG(LogTemp, Warning, TEXT("Jump Pressed"));
 
@@ -194,7 +185,7 @@ void AThirdPersonCharacter::SelectRandomHouse()
 {
     if (AllHouses.Num() > 0)
     {
-        int Index;
+        int32 Index;
         do
         {
             Index = FMath::RandRange(0, AllHouses.Num() - 1);
@@ -203,14 +194,13 @@ void AThirdPersonCharacter::SelectRandomHouse()
 
         PreviousTargetHouse = TargetHouse;
 
-        // Debug log
         if (TargetHouse)
         {
             FVector Location = TargetHouse->GetActorLocation();
-            float Radius = 300.0f;
-            FColor Color = FColor::Emerald;
-            float Duration = 0.5f;
-            float Thickness = 0.5f;
+            const float Radius = 300.0f;
+            const FColor Color = FColor::Emerald;
+            const float Duration = 0.5f;
+            const float Thickness = 0.5f;
 
             UE_LOG(LogTemp, Warning, TEXT("Selected House: %s at %s"), *TargetHouse->GetName(), *Location.ToString());
             DrawDebugSphere(GetWorld(), Location, Radius, 32, Color, true, Duration, 0, Thickness);
@@ -262,13 +252,9 @@ void AThirdPersonCharacter::DeliverParcel()
     if (HeldParcel && TargetHouse)
     {
         UE_LOG(LogTemp, Warning, TEXT("Delivering parcel to house: %s"), *TargetHouse->GetName());
-
-        // Trigger the bounce animation
         TargetHouse->PlayBounceAnimation();
-
         HeldParcel = nullptr;
         TargetHouse = nullptr;
-
         UE_LOG(LogTemp, Warning, TEXT("Parcel delivered and target house cleared."));
     }
     else
@@ -277,41 +263,13 @@ void AThirdPersonCharacter::DeliverParcel()
     }
 }
 
-void AThirdPersonCharacter::Interact()
-{
-    UE_LOG(LogTemp, Warning, TEXT("Interact pressed"));
-
-    if (HeldParcel == nullptr)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("No parcel held, attempting to find nearest parcel"));
-        HeldParcel = FindNearestParcel();
-        if (HeldParcel)
-        {
-            HeldParcel->PickUp(this);
-            SelectRandomHouse();
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Parcel held, checking if at target house"));
-        if (IsAtTargetHouse())
-        {
-            DeliverParcel();
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Not at target house"));
-        }
-    }
-}
-
 AParcel* AThirdPersonCharacter::FindNearestParcel()
 {
     TArray<AActor*> FoundActors;
+    const float SearchRadius = 200.0f;
+    FVector MyLocation = GetActorLocation();
     float NearestDist = FLT_MAX;
     AParcel* NearestParcel = nullptr;
-    FVector MyLocation = GetActorLocation();
-    float SearchRadius = 500.0f; // Define your search radius here
 
     UWorld* World = GetWorld();
     if (World)
@@ -322,8 +280,6 @@ AParcel* AThirdPersonCharacter::FindNearestParcel()
         ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
 
         UKismetSystemLibrary::SphereOverlapActors(World, MyLocation, SearchRadius, ObjectTypes, AParcel::StaticClass(), TArray<AActor*>(), FoundActors);
-
-        // Draw a debug sphere at the player's location with the defined radius
         DrawDebugSphere(World, MyLocation, SearchRadius, 32, FColor::Cyan, false, 10.0f, (uint8)'\000', 1.5f);
 
         if (FoundActors.Num() == 0)
@@ -331,17 +287,21 @@ AParcel* AThirdPersonCharacter::FindNearestParcel()
             UE_LOG(LogTemp, Warning, TEXT("No parcels found within range."));
             if (GEngine)
             {
-                GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No parcels found within range."));
+                GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("No parcels found within range."));
             }
         }
 
         for (AActor* Actor : FoundActors)
         {
-            float Dist = (Actor->GetActorLocation() - MyLocation).Size();
-            if (Dist < NearestDist)
+            AParcel* Parcel = Cast<AParcel>(Actor);
+            if (Parcel && !Parcel->bDelivered && !Parcel->bIsPickedUp)
             {
-                NearestParcel = Cast<AParcel>(Actor);
-                NearestDist = Dist;
+                float Dist = (Parcel->GetActorLocation() - MyLocation).Size();
+                if (Dist < NearestDist)
+                {
+                    NearestParcel = Parcel;
+                    NearestDist = Dist;
+                }
             }
         }
     }
@@ -353,27 +313,26 @@ void AThirdPersonCharacter::ThrowParcel()
 {
     if (GEngine)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ThrowParcel Pressed"));
+        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("ThrowParcel Pressed"));
     }
     UE_LOG(LogTemp, Warning, TEXT("ThrowParcel Pressed"));
 
     if (IsAtTargetHouse())
     {
-        if (HeldParcel && TargetHouse)  // Ensure both the parcel and the target house are valid
+        if (HeldParcel && TargetHouse)
         {
-            FVector TargetLocation = TargetHouse->GetActorLocation();  // Use the house's location as the target
-
+            FVector TargetLocation = TargetHouse->GetActorLocation();
             UE_LOG(LogTemp, Log, TEXT("Throwing parcel towards house at location: %s"), *TargetLocation.ToString());
             HeldParcel->Throw(TargetLocation, this);
+            HeldParcel->bIsPickedUp = false; // Mark the parcel as not held
             DeliverParcel();
-            
         }
         else if (!TargetHouse)
         {
             UE_LOG(LogTemp, Error, TEXT("No target house selected to throw the parcel at."));
             if (GEngine)
             {
-                GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No target house selected to throw the parcel at."));
+                GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("No target house selected to throw the parcel at."));
             }
         }
     }
@@ -382,7 +341,7 @@ void AThirdPersonCharacter::ThrowParcel()
         UE_LOG(LogTemp, Error, TEXT("Not at target house."));
         if (GEngine)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Not at target house."));
+            GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Not at target house."));
         }
     }
 }

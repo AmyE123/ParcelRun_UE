@@ -1,10 +1,11 @@
 #include "Parcel.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/BoxComponent.h"
-#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+
 
 AParcel::AParcel()
 {
@@ -22,10 +23,6 @@ AParcel::AParcel()
     CollisionComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
     CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AParcel::OnOverlapBegin);
     RootComponent = CollisionComponent;
-
-    // Static Mesh Setup
-    ParcelMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ParcelMesh"));
-    ParcelMesh->SetupAttachment(RootComponent);
 }
 
 void AParcel::BeginPlay()
@@ -132,7 +129,7 @@ void AParcel::StartMoveToTarget(FVector TargetLocation)
     MoveToLocation = TargetLocation;
     bMoving = true;
     MoveStartTime = GetWorld()->GetTimeSeconds();
-    MoveDuration = (TargetLocation - GetActorLocation()).Size() / MoveSpeed;
+    MoveDuration = (TargetLocation - GetActorLocation()).Size() / MoveSpeed;   
     bDestroyInitiated = false; // Reset the destroy initiation flag
     bDelivered = true; // Reset the delivered status
 }

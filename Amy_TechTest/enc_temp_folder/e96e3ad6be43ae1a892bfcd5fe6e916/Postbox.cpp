@@ -37,31 +37,22 @@ void APostbox::SpawnParcel()
         FVector SpawnLocation = ParcelSpawningPoint->GetComponentLocation();
         FRotator SpawnRotation = ParcelSpawningPoint->GetComponentRotation();
 
-        // Draw a debug sphere at the spawn location to ensure it's correct
+        // Draw a debug sphere at the spawn location
         DrawDebugSphere(GetWorld(), SpawnLocation, 50.0f, 12, FColor::Red, false, 5.0f);
 
         FActorSpawnParameters SpawnParams;
         SpawnParams.Owner = this;
         SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-        // Log the postbox and spawning point positions for debugging
-        UE_LOG(LogTemp, Log, TEXT("Postbox location: %s, ParcelSpawningPoint location: %s"), *GetActorLocation().ToString(), *SpawnLocation.ToString());
-
         AParcel* SpawnedParcel = GetWorld()->SpawnActor<AParcel>(ParcelClass, SpawnLocation, SpawnRotation, SpawnParams);
 
         if (SpawnedParcel)
         {
-            // Log the initial position of the spawned parcel
-            UE_LOG(LogTemp, Log, TEXT("Parcel spawned at location: %s"), *SpawnedParcel->GetActorLocation().ToString());
-
-            // Optionally, you can attach the parcel to the ParcelSpawningPoint if you need it to stay relative
-            SpawnedParcel->AttachToComponent(ParcelSpawningPoint, FAttachmentTransformRules::KeepWorldTransform);
+            // Attach the parcel to the ParcelSpawningPoint
+            SpawnedParcel->AttachToComponent(ParcelSpawningPoint, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
             // Bind the pickup event
             SpawnedParcel->OnParcelPickedUp.AddDynamic(this, &APostbox::OnParcelPickedUp);
-
-            // Log the final position to verify it is correct
-            UE_LOG(LogTemp, Log, TEXT("Parcel final location after attachment: %s"), *SpawnedParcel->GetActorLocation().ToString());
         }
     }
 }
