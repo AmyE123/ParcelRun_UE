@@ -1,6 +1,5 @@
 #include "Postbox.h"
 #include "Parcel.h"
-#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 
@@ -9,13 +8,9 @@ APostbox::APostbox()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    // Initialize the StaticMesh component for the postbox
-    PostboxMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PostboxMesh"));
-    RootComponent = PostboxMesh;
-
     // Initialize the ParcelSpawningPoint
     ParcelSpawningPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ParcelSpawningPoint"));
-    ParcelSpawningPoint->SetupAttachment(PostboxMesh);  // Attach it to the PostboxMesh
+    ParcelSpawningPoint->SetupAttachment(RootComponent);
 }
 
 void APostbox::BeginPlay()

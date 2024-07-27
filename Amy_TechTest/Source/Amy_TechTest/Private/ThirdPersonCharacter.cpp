@@ -201,7 +201,7 @@ void AThirdPersonCharacter::SelectRandomHouse()
         if (TargetHouse)
         {
             FVector Location = TargetHouse->GetActorLocation();
-            const float Radius = 300.0f;
+            const float Radius = 400.0f;
             const FColor Color = FColor::Emerald;
             const float Duration = 0.5f;
             const float Thickness = 0.5f;
@@ -224,7 +224,7 @@ bool AThirdPersonCharacter::IsAtTargetHouse()
         float Distance = FVector::Dist(CharacterLocation, HouseLocation);
 
         // Player is at the target house and close enough to deliver.
-        if (Distance < 300.0f)
+        if (Distance < 400.0f)
         {
             return true;
         }
@@ -296,7 +296,7 @@ void AThirdPersonCharacter::DrawArrowToTarget()
 
         // Check if the distance is within 3 meters (300 units)
         FString DistanceString;
-        if (Distance <= 300.0f)
+        if (Distance <= 400.0f)
         {
             // Displaying 0 just makes it easier for the player to tell they're at the house.
             DistanceString = TEXT("0 meters");

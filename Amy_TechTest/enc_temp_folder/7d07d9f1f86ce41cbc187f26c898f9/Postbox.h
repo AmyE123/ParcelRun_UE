@@ -21,17 +21,14 @@ public:
     // Called every frame
     virtual void Tick(float DeltaTime) override;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-    class UStaticMeshComponent* PostboxMesh;
-
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-    class USceneComponent* ParcelSpawningPoint;
+        class USceneComponent* ParcelSpawningPoint;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel")
-    TSubclassOf<class AParcel> ParcelClass;
+        TSubclassOf<class AParcel> ParcelClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parcel")
-    float ParcelRespawnRate;
+        float ParcelRespawnRate;
 
 private:
     FTimerHandle SpawnTimerHandle;
