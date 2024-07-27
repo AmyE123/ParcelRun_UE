@@ -1,5 +1,6 @@
 #include "EnemyCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Sound/SoundCue.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SphereComponent.h"
 #include "DrawDebugHelpers.h"
@@ -101,6 +102,11 @@ void AEnemyCharacter::AttackPlayer()
 
         // Ray for visual representation of shooting
         DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 0.2f, 0, 1.0f);
+
+        if (ShootingSoundCue)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, ShootingSoundCue, GetActorLocation());
+        }
     }
 }
 

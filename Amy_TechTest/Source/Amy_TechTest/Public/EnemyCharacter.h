@@ -9,12 +9,18 @@ class AMY_TECHTEST_API AEnemyCharacter : public ACharacter
 {
     GENERATED_BODY()
 
+public:
+    // Public Properties
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+    USoundCue* ShootingSoundCue;
+
 protected:
     // Protected Properties
     virtual void BeginPlay() override;
 
 private:
     // Private Properties
+
     UPROPERTY(EditAnywhere, Category = "AI")
     float ChaseRange;
 

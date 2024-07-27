@@ -4,6 +4,7 @@
 #include "DrawDebugHelpers.h"
 
 #include "Components/CapsuleComponent.h"
+#include "Sound/SoundCue.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
@@ -12,7 +13,7 @@
 #include "Kismet/GameplayStatics.h"
 
 // Define static const variables
-const float AThirdPersonCharacter::DashStrength = 1000.f;
+const float AThirdPersonCharacter::DashStrength = 1500.f;
 const float AThirdPersonCharacter::GroundFriction = 2.0f;
 const float AThirdPersonCharacter::BrakingDecelerationWalking = 800.0f;
 const float AThirdPersonCharacter::Acceleration = 2000.0f;
@@ -157,6 +158,11 @@ void AThirdPersonCharacter::Jump()
     }
     else if (bCanDoubleJump)
     {
+        if (DoubleJumpSoundCue)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, DoubleJumpSoundCue, GetActorLocation());
+        }
+
         FVector LaunchVelocity = GetActorForwardVector() * DashStrength;
         LaunchCharacter(LaunchVelocity, true, true);
         bCanDoubleJump = false;
@@ -231,6 +237,11 @@ void AThirdPersonCharacter::DeliverParcel()
 {
     if (HeldParcel && TargetHouse)
     {
+        if (ThrowParcelSoundCue)
+        {
+            UGameplayStatics::PlaySoundAtLocation(this, ThrowParcelSoundCue, GetActorLocation());
+        }
+
         TargetHouse->PlayBounceAnimation();
         HeldParcel = nullptr;
         TargetHouse = nullptr;
