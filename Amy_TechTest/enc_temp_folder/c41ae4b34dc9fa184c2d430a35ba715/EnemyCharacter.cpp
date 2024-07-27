@@ -2,6 +2,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SphereComponent.h"
+#include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 
@@ -15,13 +16,20 @@ AEnemyCharacter::AEnemyCharacter()
     ShootingCooldown = 2.0f;  // 2-second cooldown
     bCanShoot = true;
 
+    // Initialize the chase sphere
     ChaseSphere = CreateDefaultSubobject<USphereComponent>(TEXT("ChaseSphere"));
     ChaseSphere->SetupAttachment(RootComponent);
     ChaseSphere->InitSphereRadius(ChaseRange);
 
+    // Initialize the attack sphere
     AttackSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AttackSphere"));
     AttackSphere->SetupAttachment(RootComponent);
     AttackSphere->InitSphereRadius(AttackRange);
+
+    // Configure character movement
+    GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
 }
 
 void AEnemyCharacter::BeginPlay()
@@ -76,7 +84,8 @@ void AEnemyCharacter::ChasePlayer()
     if (PlayerCharacter)
     {
         FVector Direction = (PlayerCharacter->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-        AddMovementInput(Direction, 1.0f);
+        AddMovementInput(Direction);
+
         FRotator NewRotation = Direction.Rotation();
         SetActorRotation(NewRotation);
     }
@@ -100,27 +109,11 @@ void AEnemyCharacter::AttackPlayer()
         bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
 
         // Ray for visual representation of shooting
-        DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 0.2f, 0, 0.5f);
+        DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 0.2f, 0, 1.0f);
 
-        if (bHit)
+        if (ShootingSoundCue)
         {
-            // Log hit information
-            if (HitResult.GetActor())
-            {
-                UE_LOG(LogTemp, Warning, TEXT("Hit: %s"), *HitResult.GetActor()->GetName());
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("Hit: Unknown actor"));
-            }
-
-            // Implement shooting logic, e.g., apply damage to the player
-            // Apply damage or other effects here
-        }
-        else
-        {
-            // Log that there was no hit
-            UE_LOG(LogTemp, Warning, TEXT("No hit detected."));
+            UGameplayStatics::PlaySoundAtLocation(this, ShootingSoundCue, GetActorLocation());
         }
     }
 }

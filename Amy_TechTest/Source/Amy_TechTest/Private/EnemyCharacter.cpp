@@ -1,8 +1,8 @@
 #include "EnemyCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Sound/SoundCue.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SphereComponent.h"
+#include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 
@@ -10,24 +10,38 @@ AEnemyCharacter::AEnemyCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    ChaseRange = 1000.0f;
-    AttackRange = 200.0f;
-    MovementSpeed = 300.0f;
-    ShootingCooldown = 2.0f;  // 2-second cooldown
-    bCanShoot = true;
-
+    // Initialize the chase sphere with a default value
     ChaseSphere = CreateDefaultSubobject<USphereComponent>(TEXT("ChaseSphere"));
     ChaseSphere->SetupAttachment(RootComponent);
-    ChaseSphere->InitSphereRadius(ChaseRange);
+    ChaseSphere->InitSphereRadius(1000.0f);  // Default value
 
+    // Initialize the attack sphere with a default value
     AttackSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AttackSphere"));
     AttackSphere->SetupAttachment(RootComponent);
-    AttackSphere->InitSphereRadius(AttackRange);
+    AttackSphere->InitSphereRadius(200.0f);  // Default value
+
+    // Configure character movement with a default value
+    GetCharacterMovement()->MaxWalkSpeed = 300.0f;  // Default value
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
+
+    ShootingCooldown = 2.0f;  // 2-second cooldown
+    bCanShoot = true;
 }
 
 void AEnemyCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    // Randomize values in BeginPlay
+    ChaseRange = FMath::RandRange(500.0f, 1000.0f);
+    AttackRange = FMath::RandRange(200.0f, 400.0f);
+    MovementSpeed = FMath::RandRange(100.0f, 500.0f);
+
+    ChaseSphere->SetSphereRadius(ChaseRange);
+    AttackSphere->SetSphereRadius(AttackRange);
+
+    GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 
     PlayerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
 }
@@ -77,7 +91,8 @@ void AEnemyCharacter::ChasePlayer()
     if (PlayerCharacter)
     {
         FVector Direction = (PlayerCharacter->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-        AddMovementInput(Direction, 1.0f);
+        AddMovementInput(Direction);
+
         FRotator NewRotation = Direction.Rotation();
         SetActorRotation(NewRotation);
     }

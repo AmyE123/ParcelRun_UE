@@ -7,6 +7,7 @@
 
 class AParcel;
 class AHouse;
+class AEnemyCharacter;
 
 UCLASS()
 class AMY_TECHTEST_API AThirdPersonCharacter : public ACharacter
@@ -30,6 +31,16 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
     AParcel* HeldParcel;
 
+    // Enemy spawn settings
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
+    TSubclassOf<AEnemyCharacter> EnemyClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
+    int32 EnemiesPerWave = 3;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
+    FVector SpawnLocation;
+
 private:
     // Private properties
     float ForwardValue;
@@ -47,6 +58,9 @@ private:
     AHouse* TargetHouse;
     TArray<AHouse*> AllHouses;
     AHouse* PreviousTargetHouse;
+
+    // Parcel parameters
+    int DeliveredParcels;
 
 public:
     // Public functions
@@ -73,4 +87,5 @@ private:
     bool IsAtTargetHouse();
     void DeliverParcel();
     void DrawArrowToTarget();
+    void SpawnEnemies();
 };
