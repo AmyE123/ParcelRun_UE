@@ -99,6 +99,7 @@ void AThirdPersonCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     UpdateCharacterRotation();
+    DrawArrowToTarget();
 }
 
 void AThirdPersonCharacter::MoveForward(float Value)
@@ -248,5 +249,52 @@ void AThirdPersonCharacter::ThrowParcel()
             HeldParcel->bIsPickedUp = false;
             DeliverParcel();
         }
+    }
+}
+
+void AThirdPersonCharacter::DrawArrowToTarget()
+{
+    if (TargetHouse)
+    {
+        FVector PlayerLocation = GetActorLocation();
+        FVector TargetLocation = TargetHouse->GetActorLocation();
+        FVector Direction = (TargetLocation - PlayerLocation).GetSafeNormal();
+
+        DrawDebugDirectionalArrow(
+            GetWorld(),
+            PlayerLocation,
+            PlayerLocation + Direction * 100.0f,
+            100.0f,
+            FColor::Green,
+            false,
+            -1.0f,
+            0,
+            5.0f
+        );
+
+        float Distance = FVector::Dist(PlayerLocation, TargetLocation);
+
+        // Check if the distance is within 3 meters (300 units)
+        FString DistanceString;
+        if (Distance <= 300.0f)
+        {
+            // Displaying 0 just makes it easier for the player to tell they're at the house.
+            DistanceString = TEXT("0 meters");
+        }
+        else
+        {
+            DistanceString = FString::Printf(TEXT("%.1f meters"), Distance / 100.0f);
+        }
+
+        // Draw the distance as text
+        DrawDebugString(
+            GetWorld(),
+            PlayerLocation + FVector(0, 0, 100),
+            DistanceString,
+            nullptr,
+            FColor::White,
+            0.0f,
+            true
+        );
     }
 }

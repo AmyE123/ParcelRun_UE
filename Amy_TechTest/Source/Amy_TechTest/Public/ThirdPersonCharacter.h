@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "DrawDebugHelpers.h"
 #include "ThirdPersonCharacter.generated.h"
 
 class AParcel;
@@ -65,4 +66,5 @@ private:
     void Landed(const FHitResult& Hit) override;    
     bool IsAtTargetHouse();
     void DeliverParcel();
+    void DrawArrowToTarget();
 };
