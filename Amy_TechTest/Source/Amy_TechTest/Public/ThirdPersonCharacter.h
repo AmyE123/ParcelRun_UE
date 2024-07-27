@@ -15,6 +15,12 @@ class AMY_TECHTEST_API AThirdPersonCharacter : public ACharacter
 
 public:
     // Public properties
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+    USoundCue* DoubleJumpSoundCue;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+    USoundCue* ThrowParcelSoundCue;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
     class USpringArmComponent* CameraBoom;
 
