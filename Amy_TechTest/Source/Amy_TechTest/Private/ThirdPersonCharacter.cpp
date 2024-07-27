@@ -1,6 +1,7 @@
 #include "ThirdPersonCharacter.h"
 #include "Parcel.h"
 #include "House.h"
+#include "EnemyCharacter.h"
 #include "DrawDebugHelpers.h"
 
 #include "Components/CapsuleComponent.h"
@@ -61,6 +62,9 @@ AThirdPersonCharacter::AThirdPersonCharacter()
     // Initialize house variables
     TargetHouse = nullptr;
     PreviousTargetHouse = nullptr;
+
+    // Initialize delivered parcels counter
+    DeliveredParcels = 0;
 }
 
 void AThirdPersonCharacter::BeginPlay()
@@ -69,7 +73,6 @@ void AThirdPersonCharacter::BeginPlay()
 
     TArray<AActor*> FoundActors;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), AHouse::StaticClass(), FoundActors);
-
 
     AllHouses.Empty();
     for (AActor* Actor : FoundActors)
@@ -246,6 +249,12 @@ void AThirdPersonCharacter::DeliverParcel()
         HeldParcel = nullptr;
         TargetHouse = nullptr;
         UE_LOG(LogTemp, Warning, TEXT("Parcel delivered."));
+
+        DeliveredParcels++;
+        if (DeliveredParcels % 3 == 0)
+        {
+            SpawnEnemies();
+        }
     }
 }
 
@@ -307,5 +316,37 @@ void AThirdPersonCharacter::DrawArrowToTarget()
             0.0f,
             true
         );
+    }
+}
+
+void AThirdPersonCharacter::SpawnEnemies()
+{
+    if (EnemyClass)
+    {
+        UWorld* World = GetWorld();
+        if (World)
+        {
+            for (int32 i = 0; i < EnemiesPerWave; i++)
+            {
+                FActorSpawnParameters SpawnParams;
+                SpawnParams.Owner = this;
+                SpawnParams.Instigator = GetInstigator();
+
+                // Randomize spawn location around the designated SpawnLocation
+                FVector SpawnLocationOffset = FVector(FMath::RandRange(-500, 500), FMath::RandRange(-500, 500), 0);
+                FVector FinalSpawnLocation = SpawnLocation + SpawnLocationOffset;
+
+                // Ensure the enemies spawn above ground level
+                FVector GroundLocation = FinalSpawnLocation;
+                GroundLocation.Z += 100.0f;
+
+                AEnemyCharacter* SpawnedEnemy = World->SpawnActor<AEnemyCharacter>(EnemyClass, GroundLocation, FRotator::ZeroRotator, SpawnParams);
+                if (SpawnedEnemy)
+                {
+                    // Ensure the AI controller is assigned
+                    SpawnedEnemy->SpawnDefaultController();
+                }
+            }
+        }
     }
 }
