@@ -51,14 +51,11 @@ void AParcel::Tick(float DeltaTime)
         {
             SetActorLocation(MoveToLocation);
             bMoving = false;
-            //bDelivered = true;
 
-            // Start the timer to destroy the parcel after a delay, if not already initiated
             if (!bDestroyInitiated)
             {
                 bDestroyInitiated = true;
                 GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, this, &AParcel::DestroyParcel, 2.0f, false);
-                UE_LOG(LogTemp, Log, TEXT("Parcel will be destroyed in 2 seconds"));
             }
         }
     }
@@ -72,7 +69,7 @@ void AParcel::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherA
     {
         bIsPickedUp = true;
         Character->HeldParcel = this;
-        PickUp(Character);  // Assuming this is a method that handles the visual and gameplay effects of picking up the parcel
+        PickUp(Character);
         Character->SelectRandomHouse();
     }
 }
@@ -86,18 +83,12 @@ void AParcel::PickUp(const AThirdPersonCharacter* Character)
 
     bIsPickedUp = true;
 
-    // Visually pick up the parcel (& become a child)
-    USkeletalMeshComponent* CharacterMesh = const_cast<USkeletalMeshComponent*>(Character->GetMesh());
 
+    USkeletalMeshComponent* CharacterMesh = const_cast<USkeletalMeshComponent*>(Character->GetMesh());
     if (CharacterMesh != nullptr)
     {
-        // Attach the parcel to the HandSocket
         bool bAttached = AttachToComponent(CharacterMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("HandSocket"));
-        if (bAttached)
-        {
-            UE_LOG(LogTemp, Log, TEXT("Parcel successfully attached to %s"), *CharacterMesh->GetName());
-        }
-        else
+        if (!bAttached)
         {
             UE_LOG(LogTemp, Error, TEXT("Failed to attach parcel to %s"), *CharacterMesh->GetName());
         }
@@ -115,17 +106,14 @@ void AParcel::Throw(FVector TargetLocation, const AThirdPersonCharacter* Charact
 {
     if (Character == nullptr)
     {
-        return; // Ensure the Character is valid
+        return;
     }
 
     if (bIsPickedUp)
     {
-        // Detach the parcel from the character
         DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-
-        // Start a coroutine or a tick-based function to move towards the target
         StartMoveToTarget(TargetLocation);
-        bIsPickedUp = false; // Reset the pick-up status
+        bIsPickedUp = false;
     }
 }
 
@@ -135,12 +123,11 @@ void AParcel::StartMoveToTarget(FVector TargetLocation)
     bMoving = true;
     MoveStartTime = GetWorld()->GetTimeSeconds();
     MoveDuration = (TargetLocation - GetActorLocation()).Size() / MoveSpeed;
-    bDestroyInitiated = false; // Reset the destroy initiation flag
-    bDelivered = true; // Reset the delivered status
+    bDestroyInitiated = false;
+    bDelivered = true;
 }
 
 void AParcel::DestroyParcel()
 {
-    UE_LOG(LogTemp, Log, TEXT("Parcel destroyed"));
     Destroy();
 }

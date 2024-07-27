@@ -149,6 +149,12 @@ void AThirdPersonCharacter::UpdateCharacterRotation()
 
 void AThirdPersonCharacter::Jump()
 {
+    if (GEngine)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Jump Pressed"));
+    }
+    UE_LOG(LogTemp, Warning, TEXT("Jump Pressed"));
+
     if (JumpCounter < 1)
     {
         ACharacter::Jump();
@@ -196,12 +202,19 @@ void AThirdPersonCharacter::SelectRandomHouse()
             const float Duration = 0.5f;
             const float Thickness = 0.5f;
 
+            UE_LOG(LogTemp, Warning, TEXT("Selected House: %s at %s"), *TargetHouse->GetName(), *Location.ToString());
             DrawDebugSphere(GetWorld(), Location, Radius, 32, Color, true, Duration, 0, Thickness);
+
+            UE_LOG(LogTemp, Warning, TEXT("Debug sphere should be visible at location: %s"), *Location.ToString());
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to cast selected target as House."));
         }
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("No houses found to select from."));
+        UE_LOG(LogTemp, Warning, TEXT("No houses found to select from."));
     }
 }
 
@@ -213,15 +226,23 @@ bool AThirdPersonCharacter::IsAtTargetHouse()
         FVector HouseLocation = TargetHouse->GetActorLocation();
         float Distance = FVector::Dist(CharacterLocation, HouseLocation);
 
-        // Player is at the target house and close enough to deliver.
+        UE_LOG(LogTemp, Warning, TEXT("Character Location: %s"), *CharacterLocation.ToString());
+        UE_LOG(LogTemp, Warning, TEXT("Target House Location: %s"), *HouseLocation.ToString());
+        UE_LOG(LogTemp, Warning, TEXT("Distance to Target House: %f"), Distance);
+
         if (Distance < 300.0f)
         {
+            UE_LOG(LogTemp, Warning, TEXT("Character is at the target house."));
             return true;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Character is NOT at the target house."));
         }
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("No target house set."));
+        UE_LOG(LogTemp, Warning, TEXT("No target house set."));
     }
     return false;
 }
@@ -230,23 +251,97 @@ void AThirdPersonCharacter::DeliverParcel()
 {
     if (HeldParcel && TargetHouse)
     {
+        UE_LOG(LogTemp, Warning, TEXT("Delivering parcel to house: %s"), *TargetHouse->GetName());
         TargetHouse->PlayBounceAnimation();
         HeldParcel = nullptr;
         TargetHouse = nullptr;
-        UE_LOG(LogTemp, Warning, TEXT("Parcel delivered."));
+        UE_LOG(LogTemp, Warning, TEXT("Parcel delivered and target house cleared."));
     }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No parcel to deliver or no target house."));
+    }
+}
+
+AParcel* AThirdPersonCharacter::FindNearestParcel()
+{
+    TArray<AActor*> FoundActors;
+    const float SearchRadius = 200.0f;
+    FVector MyLocation = GetActorLocation();
+    float NearestDist = FLT_MAX;
+    AParcel* NearestParcel = nullptr;
+
+    UWorld* World = GetWorld();
+    if (World)
+    {
+        TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
+        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldStatic));
+        ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
+
+        UKismetSystemLibrary::SphereOverlapActors(World, MyLocation, SearchRadius, ObjectTypes, AParcel::StaticClass(), TArray<AActor*>(), FoundActors);
+        DrawDebugSphere(World, MyLocation, SearchRadius, 32, FColor::Cyan, false, 10.0f, (uint8)'\000', 1.5f);
+
+        if (FoundActors.Num() == 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("No parcels found within range."));
+            if (GEngine)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("No parcels found within range."));
+            }
+        }
+
+        for (AActor* Actor : FoundActors)
+        {
+            AParcel* Parcel = Cast<AParcel>(Actor);
+            if (Parcel && !Parcel->bDelivered && !Parcel->bIsPickedUp)
+            {
+                float Dist = (Parcel->GetActorLocation() - MyLocation).Size();
+                if (Dist < NearestDist)
+                {
+                    NearestParcel = Parcel;
+                    NearestDist = Dist;
+                }
+            }
+        }
+    }
+
+    return NearestParcel;
 }
 
 void AThirdPersonCharacter::ThrowParcel()
 {
+    if (GEngine)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("ThrowParcel Pressed"));
+    }
+    UE_LOG(LogTemp, Warning, TEXT("ThrowParcel Pressed"));
+
     if (IsAtTargetHouse())
     {
         if (HeldParcel && TargetHouse)
         {
             FVector TargetLocation = TargetHouse->GetActorLocation();
+            UE_LOG(LogTemp, Log, TEXT("Throwing parcel towards house at location: %s"), *TargetLocation.ToString());
             HeldParcel->Throw(TargetLocation, this);
-            HeldParcel->bIsPickedUp = false;
+            HeldParcel->bIsPickedUp = false; // Mark the parcel as not held
             DeliverParcel();
+        }
+        else if (!TargetHouse)
+        {
+            UE_LOG(LogTemp, Error, TEXT("No target house selected to throw the parcel at."));
+            if (GEngine)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("No target house selected to throw the parcel at."));
+            }
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Not at target house."));
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Not at target house."));
         }
     }
 }

@@ -65,5 +65,4 @@ private:
     void Landed(const FHitResult& Hit) override;    
     bool IsAtTargetHouse();
     void DeliverParcel();
-    AParcel* FindNearestParcel();
 };
