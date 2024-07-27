@@ -38,6 +38,4 @@ private:
 
     UFUNCTION()
         void OnParcelPickedUp();
-
-
 };

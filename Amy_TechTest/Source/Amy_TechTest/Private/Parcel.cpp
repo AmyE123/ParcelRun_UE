@@ -6,6 +6,9 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 
+// Initialize static constants
+const float AParcel::MoveSpeed = 300.0f;
+
 AParcel::AParcel()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -13,7 +16,6 @@ AParcel::AParcel()
     bMoving = false;
     bDelivered = false;
     bDestroyInitiated = false; // Initialize destroy flag
-    MoveSpeed = 300.0f;
     MoveStartTime = 0.0f;
     MoveDuration = 0.0f;
 

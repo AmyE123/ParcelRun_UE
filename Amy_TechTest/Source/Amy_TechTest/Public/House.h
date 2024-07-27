@@ -24,6 +24,9 @@ public:
 
     virtual void Tick(float DeltaTime) override;
 
+    /// <summary>
+    /// Plays the bounce animation when the house recieves a parcel.
+    /// </summary>
     void PlayBounceAnimation();
 
 protected:

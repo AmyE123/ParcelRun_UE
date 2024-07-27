@@ -9,6 +9,13 @@ AHouse::AHouse()
 
     // Create and initialize the timeline component
     BounceTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("BounceTimeline"));
+
+    // Assign the bounce curve (ensure you have a curve asset available)
+    static ConstructorHelpers::FObjectFinder<UCurveFloat> BounceCurveAsset(TEXT("/Game/PathToYourCurve/BounceCurve.BounceCurve"));
+    if (BounceCurveAsset.Succeeded())
+    {
+        BounceCurve = BounceCurveAsset.Object;
+    }
 }
 
 void AHouse::BeginPlay()
@@ -43,11 +50,13 @@ void AHouse::PlayBounceAnimation()
 
 void AHouse::HandleBounceProgress(float Value)
 {
+    // Apply the scale based on the curve value
     FVector NewScale = FVector(Value, Value, Value);
     SetActorScale3D(NewScale);
 }
 
 void AHouse::HandleBounceFinished()
 {
+    // Reset the scale to the original value
     SetActorScale3D(FVector(1.0f));
 }
