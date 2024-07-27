@@ -14,15 +14,6 @@ class AMY_TECHTEST_API AParcel : public AActor
     GENERATED_BODY()
 
 public:
-    AParcel();
-
-public:
-    virtual void Tick(float DeltaTime) override;
-
-protected:
-    virtual void BeginPlay() override;
-
-public:
     // Public properties
     FParcelPickedUpDelegate OnParcelPickedUp;
 
@@ -50,14 +41,22 @@ private:
 
 public:
     // Public functions
+    AParcel();
+
+    virtual void Tick(float DeltaTime) override;
+
     void PickUp(const AThirdPersonCharacter* Character);
     void Throw(FVector TargetLocation, const AThirdPersonCharacter* Character);
     void StartMoveToTarget(FVector TargetLocation);
 
     UFUNCTION()
-        void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
-            class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-            const FHitResult& SweepResult);
+    void OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor,
+                        class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                        const FHitResult& SweepResult);
+
+protected:
+    // Protected functions
+    virtual void BeginPlay() override;
 
 private:
     // Private functions

@@ -13,10 +13,10 @@ class AMY_TECHTEST_API AHouse : public AActor
 private:
     // Private properties
     UPROPERTY()
-    UTimelineComponent* BounceTimeline;
+        UTimelineComponent* BounceTimeline;
 
     UPROPERTY(EditAnywhere, Category = "Animation")
-    UCurveFloat* BounceCurve;
+        UCurveFloat* BounceCurve;
 
 public:
     // Public functions
@@ -33,8 +33,8 @@ protected:
 private:
     // Private functions
     UFUNCTION()
-    void HandleBounceProgress(float Value);
+        void HandleBounceProgress(float Value);
 
     UFUNCTION()
-    void HandleBounceFinished();
+        void HandleBounceFinished();
 };

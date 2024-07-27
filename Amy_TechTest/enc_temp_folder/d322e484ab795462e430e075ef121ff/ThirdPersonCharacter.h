@@ -13,15 +13,25 @@ class AMY_TECHTEST_API AThirdPersonCharacter : public ACharacter
     GENERATED_BODY()
 
 public:
+    AThirdPersonCharacter();
+
+public:
+    virtual void Tick(float DeltaTime) override;
+    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+protected:
+    virtual void BeginPlay() override;
+
+public:
     // Public properties
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-    class USpringArmComponent* CameraBoom;
+        class USpringArmComponent* CameraBoom;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
-    class UCameraComponent* FollowCamera;
+        class UCameraComponent* FollowCamera;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-    AParcel* HeldParcel;
+        AParcel* HeldParcel;
 
 private:
     // Private properties
@@ -36,24 +46,14 @@ private:
     static const float BrakingDecelerationWalking;
     static const float Acceleration;
 
-    // House parameters
     AHouse* TargetHouse;
     TArray<AHouse*> AllHouses;
     AHouse* PreviousTargetHouse;
 
 public:
     // Public functions
-    AThirdPersonCharacter();
-
-    virtual void Tick(float DeltaTime) override;
-    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
     void ThrowParcel();
     void SelectRandomHouse();
-
-protected:
-    // Protected functions
-    virtual void BeginPlay() override;
 
 private:
     // Private functions

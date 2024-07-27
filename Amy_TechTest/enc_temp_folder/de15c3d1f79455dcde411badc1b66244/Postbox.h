@@ -22,11 +22,15 @@ private:
 
 public:
     // Public functions
+    // Sets default values for this actor's properties
     APostbox();
+
+    // Called every frame
     virtual void Tick(float DeltaTime) override;
 
 protected:
     // Protected functions
+    // Called when the game starts or when spawned
     virtual void BeginPlay() override;
 
 private:
