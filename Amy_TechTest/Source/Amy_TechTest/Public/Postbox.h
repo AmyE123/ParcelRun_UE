@@ -15,6 +15,9 @@ private:
     UPROPERTY(EditAnywhere, Category = "Parcel")
     TSubclassOf<AParcel> ParcelClass;
 
+    UPROPERTY(EditAnywhere, Category = "Parcel")
+    float ParcelRespawnRate;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
     USceneComponent* ParcelSpawningPoint;
 
