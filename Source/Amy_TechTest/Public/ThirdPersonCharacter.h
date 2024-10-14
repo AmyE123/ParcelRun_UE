@@ -41,6 +41,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
     FVector SpawnLocation;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player")
+    int Health;
+
 private:
     // Private properties
     float ForwardValue;
@@ -71,6 +74,7 @@ public:
 
     void ThrowParcel();
     void SelectRandomHouse();
+    void PlayerTakeDamage();
 
 protected:
     // Protected functions

@@ -5,6 +5,7 @@
 #include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "ThirdPersonCharacter.h"
 
 AEnemyCharacter::AEnemyCharacter()
 {
@@ -114,6 +115,13 @@ void AEnemyCharacter::AttackPlayer()
         Params.AddIgnoredActor(this);
 
         bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
+
+        AThirdPersonCharacter* TPPlayerCharacter = Cast<AThirdPersonCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+
+        if (TPPlayerCharacter)
+        {
+            TPPlayerCharacter->PlayerTakeDamage();
+        }
 
         // Ray for visual representation of shooting
         DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 0.2f, 0, 1.0f);

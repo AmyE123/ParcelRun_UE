@@ -65,6 +65,8 @@ AThirdPersonCharacter::AThirdPersonCharacter()
 
     // Initialize delivered parcels counter
     DeliveredParcels = 0;
+
+    Health = 3;
 }
 
 void AThirdPersonCharacter::BeginPlay()
@@ -317,6 +319,11 @@ void AThirdPersonCharacter::DrawArrowToTarget()
             true
         );
     }
+}
+
+void AThirdPersonCharacter::PlayerTakeDamage()
+{
+    Health -= 1;
 }
 
 void AThirdPersonCharacter::SpawnEnemies()
